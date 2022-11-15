@@ -1,0 +1,14 @@
+export interface CollectionMap {
+  [key:string] : string
+}
+
+export interface mongoConnectorConfig {
+  baseURL: any,
+  databaseName: string,
+  timeout: number,
+  headers: {},
+  collections: string[],
+  user: string,
+  password: string,
+  host: string,
+}

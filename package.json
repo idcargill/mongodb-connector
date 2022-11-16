@@ -3,9 +3,11 @@
   "version": "1.0.0",
   "description": "",
   "main": "src/index.ts",
+  "type": "module",
   "scripts": {
     "dev": "npx tsc --project tsconfig.json && nodemon ./src/index.ts",
-    "test": ""
+    "start": "ts-node ./src/playground.ts",
+    "test": "jest"
   },
   "author": "Ian Cargill",
   "license": "ISC",

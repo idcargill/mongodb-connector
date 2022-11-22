@@ -16,4 +16,5 @@ export interface mongoConnectorConfig {
   user: string,
   password: string,
   host: string,
+  port: number,
 }

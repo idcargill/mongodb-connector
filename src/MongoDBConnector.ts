@@ -1,4 +1,4 @@
-import { MongoClient, ObjectId, Document } from 'mongodb';
+import { MongoClient, ObjectId, Document, MongoError } from 'mongodb';
 import { createImportSpecifier } from 'typescript';
 import { CollectionMap, KeyValuePair, mongoConnectorConfig } from './models';
 
@@ -54,7 +54,7 @@ class MongoDBConnector {
 // }
 
 
-public async getEntireCollection(collection: string): Promise<any|null> {
+public async getEntireCollection(collection: string): Promise<Document[]|null> {
   try {
     await this.connect();
     const collectionName = this.getCollectionName(collection);
@@ -65,8 +65,9 @@ public async getEntireCollection(collection: string): Promise<any|null> {
         return response;
       }
     }
-  } catch(e) {
-    console.log(e)
+  } catch(e:any) {
+    console.log('GET ENTIRE COLLECTION ERROR')
+    console.log(e.message);
   } finally {
     await this.close();
   }
@@ -124,8 +125,9 @@ public async insertOneItem(collection:string, payload: any): Promise<any | null>
       const insertedItem = await this.client.db(this.dbName).collection(col).findOne({_id: new ObjectId(result.insertedId)});
       return insertedItem;
     }
-  } catch(e) {
-    console.log(e);
+  } catch(e:any) {
+    console.log('INSERT ONE ERROR')
+    console.log(e.message);
   } finally {
     await this.close();
   }
@@ -138,8 +140,9 @@ public async dropCollection(collectionName: string): Promise<boolean|null> {
     const col = this.getCollectionName(collectionName);
     const result = await this.client.db(this.dbName).collection(col).drop();
     return result;
-  } catch(e) {
-    console.log(e);
+  } catch(e: any) {
+    console.log('DROP COLLECTION ERROR')
+    console.log(e.message);
   } finally {
     await this.close();
   }
@@ -156,11 +159,7 @@ public getCollectionsMap = () =>  this.collectionsMap;
 public getDatabaseName = () => this.dbName;
 
 private async connect() {
-  try {
-    await this.client.connect();
-  } catch(e) {
-    console.log(e);
-  }
+  await this.client.connect();
 }
 
 private async close(): Promise<void> {

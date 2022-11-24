@@ -7,52 +7,50 @@ import { mongoConnectorConfig, CollectionMap } from "../src/models";
 const mockConfig = {
   baseURL: 'mongodb://',
   databaseName: "databaseName",
-  timeout: 500,
-  headers: {},
   collections: ["Test_DB", "Test_DB2"],
-  user: "testUser",
-  password: "testPassword",
   host: "localhost",
   port: 27017,
+  timeout: 500,
+  headers: {},
+  user: "testUser",
+  password: "testPassword",
 };
 
-describe("Mongo Connector Setup", () => {  
-  const mongoConnector = new MongoDBConnector({} as Request, mockConfig);
-  const collectionMap = mongoConnector.getCollectionsMap();
-  const TEST_DB:string = collectionMap['TEST_DB']
-  
+const mongoConnector = new MongoDBConnector({} as Request, mockConfig);
+const collectionMap = mongoConnector.getCollectionsMap();
+const TEST_DB:string = collectionMap['TEST_DB']
+
+afterEach(async () => {
+  await mongoConnector.dropCollection(TEST_DB);
+})
+
+describe("Mongo Connector Setup", () => {    
   test("Inital Setup", () => {
     const name = mongoConnector.getDatabaseName();
     const map = mongoConnector.getCollectionsMap();
     expect(name).toBe("databaseName");
     expect(map).toEqual({TEST_DB:'test_db', TEST_DB2:'test_db2'});
   });
-
 });
 
-
 describe('InsertOne()', () => {
-  const mongoConnector = new MongoDBConnector({} as Request, mockConfig);
-  const collectionMap = mongoConnector.getCollectionsMap();
-  const TEST_DB:string = collectionMap['TEST_DB']
+  test("InsertOne returns null if no collection is found", async () => {
+    const payload = {name: 'kitten'};
+    const result = await mongoConnector.insertOneItem('BadName', payload);
+    expect(result).toBeNull();
+  })
+  
   test("InsertOne item", async () => {
     const payload = {
       item: 'Snickers',
       note: "satisfied"
     }
-  
     const result = await mongoConnector.insertOneItem(TEST_DB, payload);
     expect(result?.item).toBe('Snickers');
   });
 });
 
-
 describe('getEntireCollection()', () => {
-  const mongoConnector = new MongoDBConnector({} as Request, mockConfig);
-  const collectionMap = mongoConnector.getCollectionsMap();
-  const TEST_DB:string = collectionMap['TEST_DB']
-
-  
   test('Should return NULL if no items in collection', async () => {
     await mongoConnector.dropCollection(TEST_DB);
     const result = await mongoConnector.getEntireCollection(TEST_DB);
@@ -61,10 +59,8 @@ describe('getEntireCollection()', () => {
     expect(result).toBeNull();
   })
   
-  
   test('Return all items in collection', async () => {
     await mongoConnector.dropCollection(TEST_DB);
-    
     const payload1 = {item: 'Snickers'};
     const payload2 = {animal: 'Shark'};
     
@@ -74,8 +70,5 @@ describe('getEntireCollection()', () => {
     expect(allResults).toBeDefined();
     expect(allResults?.length).toBe(2);
     expect(allResults?.[0]).toEqual(expect.objectContaining({item: 'Snickers'}));
-
   });
-  
-
-})
+});

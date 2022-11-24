@@ -1,3 +1,4 @@
+import { rejects } from 'assert';
 import { MongoClient, ObjectId, Document, MongoError } from 'mongodb';
 import { createImportSpecifier } from 'typescript';
 import { CollectionMap, KeyValuePair, mongoConnectorConfig } from './models';
@@ -25,8 +26,8 @@ class MongoDBConnector {
     this.collectionsMap = this.getCollectionNameMap(config.collections);
     this.user = config.user;
     this.password = config.password;
-    this.host = config.host;
-    this.port = config.port;
+    this.host = config.host || 'localhost';
+    this.port = config.port || 20717;
     this.connectionString = `mongodb://${this.host}:${this.port}/?maxPoolSize=20&w=majority`;
     this.client = new MongoClient(this.connectionString);
   }
@@ -120,6 +121,9 @@ public async insertOneItem(collection:string, payload: any): Promise<any | null>
   try {
     await this.connect();
     const col = this.getCollectionName(collection);
+    if (!col) {
+      return null;
+    }
     const result = await this.client.db(this.dbName).collection(col).insertOne(payload);
     if (result?.acknowledged && result?.insertedId) {
       const insertedItem = await this.client.db(this.dbName).collection(col).findOne({_id: new ObjectId(result.insertedId)});
@@ -127,11 +131,9 @@ public async insertOneItem(collection:string, payload: any): Promise<any | null>
     }
   } catch(e:any) {
     console.log('INSERT ONE ERROR')
-    console.log(e.message);
   } finally {
     await this.close();
   }
-  return null;
 }
 
 public async dropCollection(collectionName: string): Promise<boolean|null> {
@@ -142,7 +144,6 @@ public async dropCollection(collectionName: string): Promise<boolean|null> {
     return result;
   } catch(e: any) {
     console.log('DROP COLLECTION ERROR')
-    console.log(e.message);
   } finally {
     await this.close();
   }

@@ -1,32 +1,37 @@
-import { MongoClient, ObjectId } from 'mongodb';
-import { CollectionMap, KeyValuePair } from './models';
+import { rejects } from 'assert';
+import { MongoClient, ObjectId, Document, MongoError } from 'mongodb';
+import { createImportSpecifier } from 'typescript';
+import { CollectionMap, KeyValuePair, mongoConnectorConfig } from './models';
 
+
+// mongodb://[username:password@]host1[:port1][,...hostN[:portN]][/[defaultauthdb][?options]]
 
 class MongoDBConnector {
-  // public client: MongoClient;
   public dbName: string;
+  public port: number;
   private baseURL: string;
   private collections: string[];
   private collectionsMap: any;
   private user: string;
   private connectionString: string;
   private password: string;
-  private host:string;
+  private host: string;
+  private client: MongoClient;
   
-  constructor(req: Request, config: any) {
+  
+  constructor(req: Request, config: mongoConnectorConfig) {
     this.baseURL = config.baseURL;
     this.dbName = config.databaseName;
     this.collections = config.collections;
     this.collectionsMap = this.getCollectionNameMap(config.collections);
     this.user = config.user;
     this.password = config.password;
-    this.host = config.host;
-    this.connectionString = `mongodb://${this.user}:${this.password}@${this.host}:{port}/?maxPoolSize=20&w=majority`;
-    // this.client = new MongoClient(this.connectionString);
+    this.host = config.host || 'localhost';
+    this.port = config.port || 20717;
+    this.connectionString = `mongodb://${this.host}:${this.port}/?maxPoolSize=20&w=majority`;
+    this.client = new MongoClient(this.connectionString);
   }
 
-
-  // Default Port: 27017
 
 // // Returns 1 record
 // public async getById(id: ObjectId, collection: string) {
@@ -50,26 +55,25 @@ class MongoDBConnector {
 // }
 
 
-// public async getEntireCollection(collection: string) {
-//   try {
-//     await this.connect();
-//     const collectionName = this.getCollectionName(collection);
-//     console.log(collectionName)
-//     if (collectionName) {
-//       let col = collectionName.toLowerCase();
-//       const response = await this.client.db(this.dbName).collection(col).find().toArray();
-//       console.log(col, response)
-//       if (response) {
-//         return response;
-//       }
-//       return null;
-//     }
-//   } catch(e) {
-//     console.log(e)
-//   } finally {
-//     await this.close();
-//   }
-// }
+public async getEntireCollection(collection: string): Promise<Document[]|null> {
+  try {
+    await this.connect();
+    const collectionName = this.getCollectionName(collection);
+    if (collectionName) {
+      let col = collectionName.toLowerCase();
+      const response = await this.client.db(this.dbName).collection(col).find().toArray();
+      if (response.length > 0) {
+        return response;
+      }
+    }
+  } catch(e:any) {
+    console.log('GET ENTIRE COLLECTION ERROR')
+    console.log(e.message);
+  } finally {
+    await this.close();
+  }
+  return null;
+}
 
 // public async deleteOneItem(id: ObjectId, collection:string) {
 //   try {
@@ -108,45 +112,69 @@ class MongoDBConnector {
 //   return null;
 // }
 
-// /*
-//   @param collection name: string
-//   @param payload: object to be inserted
-//   @return Newly inserted item or null
-// */
-// public async insertOneItem(collection:string, payload: any): Promise<any | null> {
-//   try {
-//     await this.connect();
-//     const col = this.getCollectionName(collection) as string;
-//     const result = await this.client.db(this.dbName).collection(col).insertOne(payload);
-//     if (result?.acknowledged && result?.insertedId) {
-//       const insertedItem = await this.client.db(this.dbName).collection(col).findOne({_id: new ObjectId(result.insertedId)});
-//       return insertedItem;
-//     }
-//   } catch(e) {
-//     console.log(e);
-//     return null;
-//   } finally {
-//     await this.close();
-//   }
-// }
+/*
+  @param collection name: string
+  @param payload: object to be inserted
+  @return Newly inserted item or null
+*/
+public async insertOneItem(collection:string, payload: any): Promise<any | null> {
+  try {
+    await this.connect();
+    const col = this.getCollectionName(collection);
+    if (!col) {
+      return null;
+    }
+    const result = await this.client.db(this.dbName).collection(col).insertOne(payload);
+    if (result?.acknowledged && result?.insertedId) {
+      const insertedItem = await this.client.db(this.dbName).collection(col).findOne({_id: new ObjectId(result.insertedId)});
+      return insertedItem;
+    }
+  } catch(e:any) {
+    console.log('INSERT ONE ERROR')
+  } finally {
+    await this.close();
+  }
+}
+
+public async dropCollection(collectionName: string): Promise<boolean|null> {
+  try {
+    await this.connect();
+    const col = this.getCollectionName(collectionName);
+    const result = await this.client.db(this.dbName).collection(col).drop();
+    return result;
+  } catch(e: any) {
+    console.log('DROP COLLECTION ERROR')
+  } finally {
+    await this.close();
+  }
+  return null;
+}
+
+public async deleteDatabase() {
+  await this.client.db(this.dbName).dropDatabase();
+}
+
 
 public getCollectionsMap = () =>  this.collectionsMap;
 
 public getDatabaseName = () => this.dbName;
 
-// private connect = async () => {
-//   await this.client.connect();
-// }
-
-// private close = async() => {
-//   await this.client.close();
-// }
-
-
-private getCollectionName(collectionName:string): string {
-  return this.collectionsMap[collectionName.toLowerCase()];
+private async connect() {
+  await this.client.connect();
 }
 
+private async close(): Promise<void> {
+  await this.client.close();
+}
+
+
+// Get collection name from collection map
+private getCollectionName(collectionName:string): string {
+  return this.collectionsMap[collectionName.toUpperCase()];
+}
+
+
+// Collection map of UPPER KEY : lower name
 private getCollectionNameMap(collections: string[]): CollectionMap {
   const collectionNameMap = collections.reduce((accu:CollectionMap, value:string, idx:number) => {
     const key = value.toUpperCase();
@@ -155,7 +183,6 @@ private getCollectionNameMap(collections: string[]): CollectionMap {
   }, {})
   return collectionNameMap;
 }
-
 }
 
 export default MongoDBConnector;

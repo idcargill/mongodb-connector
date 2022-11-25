@@ -1,20 +1,14 @@
 version: '2'
 
 services:
-  mongoConnector:
-    image: node
-    
-
-
   mongo:
     image: mongo
     restart: always
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=root
-      - MONGO_INITDB_ROOT_PASSWORD=password
-  
+    # environment:
+    #   - MONGO_INITDB_ROOT_USERNAME=root
+    #   - MONGO_INITDB_ROOT_PASSWORD=password
+
     ports:
-      - 20717:20717
+      - 27017:27017
     expose:
       - 27017
-  

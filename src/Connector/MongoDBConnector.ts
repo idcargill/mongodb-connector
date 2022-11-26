@@ -15,7 +15,7 @@ class MongoDBConnector {
 
   constructor(config: mongoConnectorConfig) {
     this.dbName = config.databaseName;
-    this.collectionsMap = this.getCollectionNameMap(config.collections);
+    this.collectionsMap = this.buildCollectionMap(config.collections);
     this.connectionString = config.connectionString;
     this.client = new MongoClient(this.connectionString);
   }
@@ -27,7 +27,10 @@ class MongoDBConnector {
    * @returns 1 Document, Null if no document found.
    * Throws error if collection name is not found.
    */
-  public async getById(collection: string, id: ObjectId) {
+  public async getById(
+    collection: string,
+    id: ObjectId
+  ): Promise<Document | null> {
     try {
       await this.connect();
       const col = this.getCollectionName(collection);
@@ -42,7 +45,6 @@ class MongoDBConnector {
         if (response) {
           return response;
         }
-        return null;
       }
     } catch (e: any) {
       if (e.name === MongoTopologyClosedError.name) {
@@ -53,6 +55,7 @@ class MongoDBConnector {
     } finally {
       await this.close();
     }
+    return null;
   }
 
   /*
@@ -61,9 +64,9 @@ class MongoDBConnector {
   @return Newly inserted item or null. Throws error if collection not found
   */
   public async insertOneItem(
-    collection: string,
+    collection: keyof CollectionMap,
     payload: any
-  ): Promise<any | null> {
+  ): Promise<Document | null> {
     try {
       await this.connect();
       const col = this.getCollectionName(collection);
@@ -78,19 +81,25 @@ class MongoDBConnector {
         .insertOne(payload);
 
       if (result?.acknowledged && result?.insertedId) {
-        const insertedItem = await this.client
+        const newDocument = await this.client
           .db(this.dbName)
           .collection(col)
           .findOne({ _id: new ObjectId(result.insertedId) });
-        return insertedItem;
+        return newDocument;
       }
     } catch (e: any) {
       throw new Error('COLLECTION NAME ERROR CAUGHT');
     } finally {
       await this.close();
     }
+    return null;
   }
 
+  /**
+   *
+   * @param collection string
+   * @returns Array of Documents or null
+   */
   public async getEntireCollection(
     collection: string
   ): Promise<Document[] | null> {
@@ -116,11 +125,18 @@ class MongoDBConnector {
     return null;
   }
 
+  /**
+   *
+   * @param collection string
+   * @param id Mongo OjbectId
+   * @param payload Object
+   * @returns Updated Document or Null
+   */
   public async updateOneItem(
     collection: string,
     id: ObjectId,
     payload: any
-  ): Promise<any | null> {
+  ): Promise<Document | null> {
     try {
       await this.connect();
       const col = this.getCollectionName(collection);
@@ -146,7 +162,6 @@ class MongoDBConnector {
     } finally {
       await this.close();
     }
-    return null;
   }
 
   /**
@@ -158,7 +173,7 @@ class MongoDBConnector {
   public async deleteOneItem(
     collection: string,
     id: ObjectId
-  ): Promise<DeleteResult | undefined> {
+  ): Promise<DeleteResult | void> {
     try {
       await this.connect();
       const col = this.getCollectionName(collection);
@@ -181,7 +196,7 @@ class MongoDBConnector {
     }
   }
 
-  public async dropCollection(collectionName: string): Promise<boolean | null> {
+  public async dropCollection(collectionName: string): Promise<boolean> {
     try {
       await this.connect();
       const col = this.getCollectionName(collectionName);
@@ -194,7 +209,7 @@ class MongoDBConnector {
     } finally {
       await this.close();
     }
-    return null;
+    return false;
   }
 
   public getCollectionsMap = (): CollectionMap => this.collectionsMap;
@@ -217,7 +232,7 @@ class MongoDBConnector {
   }
 
   // Collection map of UPPER KEY : lower name
-  private getCollectionNameMap(collections: string[]): CollectionMap {
+  private buildCollectionMap(collections: string[]): CollectionMap {
     const collectionNameMap = collections.reduce(
       (accu: CollectionMap, value: string, idx: number) => {
         const key = value.toUpperCase();

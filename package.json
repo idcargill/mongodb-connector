@@ -5,8 +5,8 @@
   "main": "src/index.ts",
   "type": "module",
   "scripts": {
-    "dev": "npx tsc --project tsconfig.json && nodemon ./src/index.ts",
-    "start": "nodemon ./src/index.ts",
+    "dev": "ts-node ./src/index.ts",
+    "start": "tsc nodemon ./src/index.ts",
     "setup": "docker compose up",
     "test": "jest --coverage"
   },

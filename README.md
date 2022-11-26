@@ -44,6 +44,14 @@ Connector uses a collectionsMap normalized as UPPER_CASE:lower_case naming. Avai
 
 - close(): Closes DB connection
 
+### Example
+
+> npm run example
+
+Example usage:
+
+> src/index.ts
+
 ### Testing
 
 A local mongo image is run in docker for testing. Database information is destroyed after tests are run.

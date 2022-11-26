@@ -3,12 +3,15 @@
   "version": "1.0.0",
   "description": "",
   "main": "src/index.ts",
-  "type": "module",
   "scripts": {
-    "dev": "ts-node ./src/index.ts",
-    "start": "tsc nodemon ./src/index.ts",
+    "dev": "nodemon -e ts --exec \"npm run compile\"",
+    "start": "",
+    "build": "tsc",
+    "go": "node dist/src/index.js",
+    "example": "npm run build && npm run go",
     "setup": "docker compose up",
-    "test": "jest --coverage"
+    "test": "jest --coverage",
+    "compile": "tsc && node dist/src/index.js"
   },
   "author": "Ian Cargill",
   "license": "ISC",
@@ -23,6 +26,7 @@
     "@types/jest": "^29.2.3",
     "@types/mongodb": "^4.0.7",
     "@types/node": "^18.11.9",
+    "babel": "^6.23.0",
     "babel-jest": "^29.3.1",
     "jest": "^29.3.1",
     "jest-environment-node": "^29.3.1",

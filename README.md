@@ -48,6 +48,56 @@ Connector uses a collectionsMap normalized as UPPER_CASE:lower_case naming. Avai
 
 > npm run example
 
+```javascript
+const sampleConfig: mongoConnectorConfig = {
+  databaseName: 'testingDB',
+  collections: ['users', 'inventory'],
+  connectionString: 'mongodb://localhost:27017',
+};
+
+// Extend a new class
+class TestConnector extends MongoDBConnector {}
+
+// Instantiate new class
+const SampleConnector = new TestConnector(sampleConfig);
+
+// Get a map of all collections
+const collections = SampleConnector.getCollectionsMap();
+
+// Colleciont names UPPER CASE
+const collectionNames = Object.keys(collections);
+
+const example = async () => {
+  // Define a collection from the collections map
+  const userCollection = collections.USERS;
+
+  const user1 = { name: 'Frank' };
+
+  // Insert into a collection, new Mongo document is returned
+  const user1WithId = await SampleConnector.insertOneItem(
+    userCollection,
+    user1
+  );
+
+  // Get entire collection as array
+  const users = await SampleConnector.getEntireCollection(userCollection);
+
+  // Switch Collections
+  const inventoryCollection = collections.INVENTORY;
+
+  const item1 = { part: 'screw' };
+  const item2 = { description: 'I have been updated', part: 'nail' };
+
+  // Input item is returned when inserted
+  const nailItem = await SampleConnector.insertOneItem(
+    inventoryCollection,
+    item1
+  );
+
+  await SampleConnector.updateOneItem(inventoryCollection, nailItem._id, item2);
+};
+```
+
 Example usage:
 
 > src/index.ts

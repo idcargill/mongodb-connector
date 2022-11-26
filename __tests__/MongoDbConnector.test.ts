@@ -1,5 +1,5 @@
-import MongoDBConnector from '../src/MongoDBConnector';
-import { mongoConnectorConfig, CollectionMap } from '../src/models';
+import MongoDBConnector from '../src/index';
+import { mongoConnectorConfig, CollectionMap } from '../src/index';
 import { ObjectId } from 'mongodb';
 
 // mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+1.6.0

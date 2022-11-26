@@ -1,5 +1,5 @@
-import MongoDBConnector from './index';
-import { mongoConnectorConfig, KeyValuePair, CollectionMap } from './index';
+import MongoDBConnector from '../index';
+import { mongoConnectorConfig, KeyValuePair, CollectionMap } from '../index';
 
 const sampleConfig: mongoConnectorConfig = {
   databaseName: 'SampleDB',

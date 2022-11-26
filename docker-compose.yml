@@ -3,13 +3,9 @@ version: '2'
 services:
   mongo:
     image: mongo
+    container_name: mongodbConnector
     restart: always
     ports:
       - 27017:27017
-    expose:
-      - 27017
-    volumes:
-      - sampledb:/mongodb/data
-
-volumes:
-  sampledb:
+    # expose:
+    #   - 27017

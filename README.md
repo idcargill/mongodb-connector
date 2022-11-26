@@ -26,6 +26,40 @@ Connector uses a collectionsMap normalized as UPPER_CASE:lower_case naming. Avai
     > npm i
     > npm run setup
 
+### Example Use
+
+Checkout src/example.ts for implemenation example.
+
+Run code example:
+
+First setup Mongodb docker container:
+
+> npm run setup
+
+Then run example
+
+> npm run example
+
+Teardown
+
+> npm run stop
+
+```javascript
+const sampleConfig: mongoConnectorConfig = {
+  databaseName: 'SampleDB',
+  collections: ['users', 'inventory'],
+  connectionString: 'mongodb://localhost:27017',
+};
+const myDbConnector = new MongoConnector(sampleConfig);
+const collectionMap = myDbConnector.getCollectionMap();
+
+// Get entire collection by name
+const dataArr = myDbConnector.getEntireColleciton(Collecion.USERS);
+
+// Inserting a document will return the new collection Doclument with ID
+const newUser = myDbConnector.inertOneItem(Collection.USERS, payload);
+```
+
 ### Methods
 
 - getById(CollctionName, ID)
@@ -44,14 +78,14 @@ Connector uses a collectionsMap normalized as UPPER_CASE:lower_case naming. Avai
 
 - close(): Closes DB connection
 
-### Example
-
-> npm run example
-
-Example usage:
-
-> src/index.ts
-
 ### Testing
 
 A local mongo image is run in docker for testing. Database information is destroyed after tests are run.
+
+First make sure mongodb container is running:
+
+> npm run setup
+
+Test will run against the docker container. You do not need to have mongodb installed locally.
+
+> npm run test

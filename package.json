@@ -7,11 +7,12 @@
     "dev": "nodemon -e ts --exec \"npm run compile\"",
     "start": "",
     "build": "tsc",
-    "go": "node dist/src/index.js",
+    "go": "node dist/src/example.js",
     "example": "npm run build && npm run go",
     "setup": "docker compose up",
     "test": "jest --coverage",
-    "compile": "tsc && node dist/src/index.js"
+    "compile": "tsc && node dist/src/index.js",
+    "stop": "docker compose down --volumes"
   },
   "author": "Ian Cargill",
   "license": "ISC",
@@ -30,6 +31,7 @@
     "babel-jest": "^29.3.1",
     "jest": "^29.3.1",
     "jest-environment-node": "^29.3.1",
+    "jest-runner-tsc": "^1.6.0",
     "nodemon": "^2.0.20",
     "ts-jest": "^29.0.3",
     "ts-node": "^10.9.1",

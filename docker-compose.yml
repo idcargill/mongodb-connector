@@ -8,3 +8,8 @@ services:
       - 27017:27017
     expose:
       - 27017
+    volumes:
+      - sampledb:/mongodb/data
+
+volumes:
+  sampledb:

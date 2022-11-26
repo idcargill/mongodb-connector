@@ -26,6 +26,40 @@ Connector uses a collectionsMap normalized as UPPER_CASE:lower_case naming. Avai
     > npm i
     > npm run setup
 
+### Example Use
+
+Checkout src/example.ts for implemenation example.
+
+Run code example:
+
+First setup Mongodb docker container:
+
+> npm run setup
+
+Then run example
+
+> npm run example
+
+Teardown
+
+> npm run stop
+
+```javascript
+const sampleConfig: mongoConnectorConfig = {
+  databaseName: 'SampleDB',
+  collections: ['users', 'inventory'],
+  connectionString: 'mongodb://localhost:27017',
+};
+const myDbConnector = new MongoConnector(sampleConfig);
+const collectionMap = myDbConnector.getCollectionMap();
+
+// Get entire collection by name
+const dataArr = myDbConnector.getEntireColleciton(Collecion.USERS);
+
+// Inserting a document will return the new collection Doclument with ID
+const newUser = myDbConnector.inertOneItem(Collection.USERS, payload);
+```
+
 ### Methods
 
 - getById(CollctionName, ID)
@@ -44,64 +78,14 @@ Connector uses a collectionsMap normalized as UPPER_CASE:lower_case naming. Avai
 
 - close(): Closes DB connection
 
-### Example
-
-> npm run example
-
-```javascript
-const sampleConfig: mongoConnectorConfig = {
-  databaseName: 'testingDB',
-  collections: ['users', 'inventory'],
-  connectionString: 'mongodb://localhost:27017',
-};
-
-// Extend a new class
-class TestConnector extends MongoDBConnector {}
-
-// Instantiate new class
-const SampleConnector = new TestConnector(sampleConfig);
-
-// Get a map of all collections
-const collections = SampleConnector.getCollectionsMap();
-
-// Colleciont names UPPER CASE
-const collectionNames = Object.keys(collections);
-
-const example = async () => {
-  // Define a collection from the collections map
-  const userCollection = collections.USERS;
-
-  const user1 = { name: 'Frank' };
-
-  // Insert into a collection, new Mongo document is returned
-  const user1WithId = await SampleConnector.insertOneItem(
-    userCollection,
-    user1
-  );
-
-  // Get entire collection as array
-  const users = await SampleConnector.getEntireCollection(userCollection);
-
-  // Switch Collections
-  const inventoryCollection = collections.INVENTORY;
-
-  const item1 = { part: 'screw' };
-  const item2 = { description: 'I have been updated', part: 'nail' };
-
-  // Input item is returned when inserted
-  const nailItem = await SampleConnector.insertOneItem(
-    inventoryCollection,
-    item1
-  );
-
-  await SampleConnector.updateOneItem(inventoryCollection, nailItem._id, item2);
-};
-```
-
-Example usage:
-
-> src/index.ts
-
 ### Testing
 
 A local mongo image is run in docker for testing. Database information is destroyed after tests are run.
+
+First make sure mongodb container is running:
+
+> npm run setup
+
+Test will run against the docker container. You do not need to have mongodb installed locally.
+
+> npm run test

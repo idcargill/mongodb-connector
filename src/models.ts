@@ -4,17 +4,11 @@ export interface KeyValuePair {
 }
 
 export interface CollectionMap {
-  [key:string] : string
+  [key: string]: string;
 }
 
 export interface mongoConnectorConfig {
-  baseURL: any,
-  databaseName: string,
-  timeout: number,
-  headers: {},
-  collections: string[],
-  user: string,
-  password: string,
-  host: string,
-  port: number,
+  databaseName: string;
+  collections: string[];
+  connectionString: string;
 }

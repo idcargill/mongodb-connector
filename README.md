@@ -1,5 +1,9 @@
 # MongoDB-Connector
 
+[npm](https://www.npmjs.com/package/@idcargill/mongodb-connector])
+
+> npm install @idcargill/mongodb-connector
+
 A simple abstract class wrapper around the MongoDB Node driver for common opperations.
 For use with a single database with a single or multiple collections.
 

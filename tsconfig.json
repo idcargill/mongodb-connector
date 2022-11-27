@@ -9,7 +9,7 @@
     "resolveJsonModule": true,
     "allowJs": true,
     "outDir": "dist",
-    "rootDir": ".",
+    "rootDir": "src",
     "noImplicitAny": true,
     "moduleResolution": "node",
     "sourceMap": true,
@@ -25,12 +25,5 @@
   },
   // "files": ["./src/*"],
   "include": [".", "./src/**/*"],
-  "exclude": [
-    "/node_modules/*",
-    "coverage/*",
-    "__tests__",
-    "dist",
-    "bable*",
-    "jest*"
-  ]
+  "exclude": ["/node_modules/*", "coverage/*", "__tests__", "dist", "bable*", "jest*"]
 }

@@ -27,8 +27,12 @@ const example = async () => {
   const user2 = { name: 'Krista' };
 
   // Insert into a collection
-  await SampleConnector.insertOneItem(userCollection, user1);
-  await SampleConnector.insertOneItem(userCollection, user2);
+  try {
+    await SampleConnector.insertOneItem(userCollection, user1);
+    await SampleConnector.insertOneItem(userCollection, user2);
+  } catch (e) {
+    console.log(e);
+  }
 
   // Get entire collection
   const users = await SampleConnector.getEntireCollection(userCollection);
@@ -41,13 +45,10 @@ const example = async () => {
   const item2 = { description: 'I have been updated', part: 'nail' };
 
   // Input item is returned when inserted
-  const nailItem = await SampleConnector.insertOneItem(
-    inventoryCollection,
-    item1
-  );
+  const nailItem = await SampleConnector.insertOneItem(inventoryCollection, item1);
   console.log(nailItem);
 
-  await SampleConnector.updateOneItem(inventoryCollection, nailItem._id, item2);
+  await SampleConnector.updateOneItem(inventoryCollection, nailItem?._id, item2);
 
   // Entire Collection
   const items = await SampleConnector.getEntireCollection(inventoryCollection);

@@ -1,21 +1,31 @@
 {
-  "name": "mongodb-connector",
+  "name": "@idcargill/mongodb-connector",
   "version": "1.0.0",
-  "description": "",
-  "main": "src/index.ts",
-  "scripts": {
-    "dev": "nodemon -e ts --exec \"npm run compile\"",
-    "start": "",
-    "build": "tsc",
-    "go": "node dist/src/Example/example.js",
-    "example": "npm run build && npm run go",
-    "setup": "docker compose up",
-    "test": "jest --coverage",
-    "compile": "tsc && node dist/src/index.js",
-    "stop": "docker compose down --volumes"
+  "description": "A simple wrapper for Mongo-Nodejs driver. CRUD opperations are standardized for databases with multiple collections. ",
+  "main": "dist/index.ts",
+  "types": "dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/idcargill/mongodb-connector.git"
   },
   "author": "Ian Cargill",
   "license": "ISC",
+  "files": [
+    "dist/index.js",
+    "dist/index.d.ts",
+    "dist/index.js.map",
+    "dist/Connector/*",
+    "license",
+    "README.md"
+  ],
+  "scripts": {
+    "setup": "docker compose up",
+    "build": "tsc",
+    "go": "node dist/Example/example.js",
+    "example": "npm run build && npm run go",
+    "test": "jest --coverage",
+    "stop": "docker compose down --volumes"
+  },
   "dependencies": {
     "mongodb": "^4.11.0"
   },
@@ -32,9 +42,18 @@
     "jest": "^29.3.1",
     "jest-environment-node": "^29.3.1",
     "jest-runner-tsc": "^1.6.0",
-    "nodemon": "^2.0.20",
     "ts-jest": "^29.0.3",
     "ts-node": "^10.9.1",
     "typescript": "^4.8.4"
-  }
+  },
+  "bugs": {
+    "url": "https://github.com/idcargill/mongodb-connector/issues"
+  },
+  "homepage": "https://github.com/idcargill/mongodb-connector#readme",
+  "keywords": [
+    "[mongodb",
+    "mongodb-connector",
+    "database",
+    "connector]"
+  ]
 }

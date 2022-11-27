@@ -28,20 +28,19 @@ class MongoDBConnector {
    * Throws error if collection name is not found.
    */
   public async getById(
-    collection: string,
+    collectionName: string,
     id: ObjectId
   ): Promise<Document | null> {
     try {
       await this.connect();
-      const col = this.getCollectionName(collection);
-      if (typeof col !== 'string') {
+      const collection = this.getCollection(collectionName);
+
+      if (!collection) {
         throw new TypeError('COLLECTION NAME NOT FOUND');
       }
-      if (col) {
-        const response = await this.client
-          .db(this.dbName)
-          .collection(col)
-          .findOne({ _id: new ObjectId(id) });
+
+      if (collection) {
+        const response = await collection.findOne({ _id: new ObjectId(id) });
         if (response) {
           return response;
         }
@@ -64,27 +63,24 @@ class MongoDBConnector {
   @return Newly inserted item or null. Throws error if collection not found
   */
   public async insertOneItem(
-    collection: keyof CollectionMap,
+    collectionName: keyof CollectionMap,
     payload: any
   ): Promise<Document | null> {
     try {
       await this.connect();
-      const col = this.getCollectionName(collection);
+      const collection = this.getCollection(collectionName);
 
-      if (col === undefined) {
+      if (!collection) {
         throw new Error('COLLECTION NAME ERROR');
       }
 
-      const result = await this.client
-        .db(this.dbName)
-        .collection(col)
-        .insertOne(payload);
+      const result = await collection.insertOne(payload);
 
       if (result?.acknowledged && result?.insertedId) {
-        const newDocument = await this.client
-          .db(this.dbName)
-          .collection(col)
-          .findOne({ _id: new ObjectId(result.insertedId) });
+        const newDocument = await collection.findOne({
+          _id: new ObjectId(result.insertedId),
+        });
+
         return newDocument;
       }
     } catch (e: any) {
@@ -101,18 +97,13 @@ class MongoDBConnector {
    * @returns Array of Documents or null
    */
   public async getEntireCollection(
-    collection: string
+    collectionName: string
   ): Promise<Document[] | null> {
     try {
       await this.connect();
-      const collectionName = this.getCollectionName(collection);
-      if (collectionName) {
-        let col = collectionName.toLowerCase();
-        const response = await this.client
-          .db(this.dbName)
-          .collection(col)
-          .find()
-          .toArray();
+      const collection = this.getCollection(collectionName);
+      if (collection) {
+        const response = await collection.find().toArray();
         if (response.length > 0) {
           return response;
         }
@@ -133,26 +124,23 @@ class MongoDBConnector {
    * @returns Updated Document or Null
    */
   public async updateOneItem(
-    collection: string,
+    collectionName: string,
     id: ObjectId,
     payload: any
   ): Promise<Document | null> {
     try {
       await this.connect();
-      const col = this.getCollectionName(collection);
+      const collection = this.getCollection(collectionName);
 
-      if (typeof col !== 'string') {
+      if (!collection) {
         throw new TypeError('Collection name must be a string');
       }
 
-      const response = await this.client
-        .db(this.dbName)
-        .collection(col)
-        .findOneAndUpdate(
-          { _id: new ObjectId(id) },
-          { $set: payload },
-          { returnDocument: 'after' }
-        );
+      const response = await collection.findOneAndUpdate(
+        { _id: new ObjectId(id) },
+        { $set: payload },
+        { returnDocument: 'after' }
+      );
       if (response.ok !== 1) {
         throw new Error('ID NOT FOUND');
       }
@@ -171,22 +159,21 @@ class MongoDBConnector {
    * @returns DeleteResult {acknowleged: boolean, deletedCount: number}
    */
   public async deleteOneItem(
-    collection: string,
+    collectionName: string,
     id: ObjectId
   ): Promise<DeleteResult | void> {
     try {
       await this.connect();
-      const col = this.getCollectionName(collection);
+      const collection = this.getCollection(collectionName);
 
-      if (col === undefined || typeof col !== 'string') {
+      if (collection === undefined) {
         throw new Error();
       }
 
-      if (col) {
-        const response = await this.client
-          .db(this.dbName)
-          .collection(col)
-          .deleteOne({ _id: new ObjectId(id) });
+      if (collection) {
+        const response: DeleteResult = await collection.deleteOne({
+          _id: new ObjectId(id),
+        });
         return response;
       }
     } catch (e: any) {
@@ -199,9 +186,9 @@ class MongoDBConnector {
   public async dropCollection(collectionName: string): Promise<boolean> {
     try {
       await this.connect();
-      const col = this.getCollectionName(collectionName);
-      if (col) {
-        const result = await this.client.db(this.dbName).collection(col).drop();
+      const collection = this.getCollection(collectionName);
+      if (collection) {
+        const result = await collection.drop();
         return result;
       }
     } catch (e: any) {
@@ -224,11 +211,26 @@ class MongoDBConnector {
     await this.client.close();
   }
 
-  // Get collection name from collections map
-  private getCollectionName(
-    collectionName: keyof CollectionMap
-  ): string | undefined {
-    return this.collectionsMap[(collectionName as string).toUpperCase()];
+  public async ping(collectionName: string): Promise<boolean> {
+    await this.connect();
+    const collection = this.getCollection(collectionName);
+    if (collection) {
+      const result = await this.client.db(this.dbName).stats();
+      console.log(result);
+      if (result.ok) {
+        return true;
+      }
+    }
+    await this.close();
+    return false;
+  }
+
+  // Get collection from collections map
+  private getCollection(collectionName: keyof CollectionMap): Document | null {
+    const colName =
+      this.collectionsMap[(collectionName as string).toUpperCase()];
+    const collection = this.client.db(this.dbName).collection(colName);
+    return collection;
   }
 
   // Collection map of UPPER KEY : lower name

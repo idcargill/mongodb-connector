@@ -7,7 +7,7 @@
     "dev": "nodemon -e ts --exec \"npm run compile\"",
     "start": "",
     "build": "tsc",
-    "go": "node dist/src/example.js",
+    "go": "node dist/src/Example/example.js",
     "example": "npm run build && npm run go",
     "setup": "docker compose up",
     "test": "jest --coverage",

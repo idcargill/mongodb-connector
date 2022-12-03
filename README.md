@@ -1,6 +1,6 @@
 # MongoDB-Connector
 
-[npm](https://www.npmjs.com/package/@idcargill/mongodb-connector])
+[npm](https://www.npmjs.com/package/@idcargill/mongodb-connector)
 
 > npm install @idcargill/mongodb-connector
 

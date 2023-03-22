@@ -14,8 +14,10 @@
     "noImplicitAny": true,                            /* Enable error reporting for expressions and declarations with an implied 'any' type. */
     "moduleResolution": "node",                       /* Specify how TypeScript looks up a file from a given module specifier. */
     "sourceMap": true,                                /* Create source map files for emitted JavaScript files. */
-    "types": ["@types/node", "@types/jest"],                                      /* Specify type package names to be included without being referenced in a source file. */
-
+    "types": ["@types/node", "@types/jest"],                                   /* Specify type package names to be included without being referenced in a source file. */
+    "typeRoots": [
+      "./node_modules/@types", ".typings"
+    ]
 
 
 

@@ -4,8 +4,6 @@ services:
   mongoConnector:
     image: node
     
-
-
   mongo:
     image: mongo
     restart: always

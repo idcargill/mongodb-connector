@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "description": "",
   "main": "src/index.ts",
-  "type": "module",
   "scripts": {
-    "dev": "npx tsc --project tsconfig.json && nodemon ./src/index.ts",
-    "start": "nodemon ./src/index.ts",
+    "dev": "ts-node --esm ./src/playground.ts",
+    "k": "ts-node --showConfig",
+    "start": "ts-node ./src/playground.ts",
     "test": "jest --coverage"
   },
   "author": "Ian Cargill",

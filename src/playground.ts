@@ -1,17 +1,31 @@
 import MongoDbConnector from './index';
-import { mongoConnectorConfig } from './models';
+import { MongoDbConfigI } from './MongoDBConnector'; 
+// import { Collection } from 'mongodb';
 
-const config: mongoConnectorConfig = {
-    baseURL: "mongodb://127.0.0.1:27017",
-    databaseName: "test",
-    collections: ["kittens"],
-    timeout: 1000,
-    headers: {},
-    user: 'test',
-    password: "",
-    host: 'mongodb',
+// const CONNECTION_STRING = 'mongodb://root:password@localhost:27017';
+const CONNECTION_STRING_MAC = 'mongodb://localhost:27017/?directConnection=true&serverSelectionTimeoutMS=2000';
+
+
+const mongoConfig: MongoDbConfigI = {
+    connectionString : CONNECTION_STRING_MAC,
+    databaseName: 'test',
+    collectionNames: ['fork', 'KNIfE', 'sPooN']
 }
 
-const connection = new MongoDbConnector({} as Request, config);
+const mongo = new MongoDbConnector({} as Request, mongoConfig);
 
-console.log(connection.getDatabaseName());
+// const main = async () => {
+//   console.log('start');
+//   const result = await mongo.insertOne('fork', {
+//     userID: '123',
+//     pet: 'kitten',
+//     job: 'pizza',
+//   })
+//   console.log(result);
+// }
+
+
+// console.log(mongo);
+// main();
+
+console.log('hi');

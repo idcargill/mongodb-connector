@@ -1,30 +1,47 @@
 
-> mongodb://user@password@sample.host:port/?maxPoolSize=20&w=majority
+# Mongodb Connector - App Wrapper
 
-## Config
+[NPM](https://www.npmjs.com/package/@idcargill/mongodb-connector)
 
-- dbName: Database name
-- collections: Array of string names of collections in provided database.
-- user: User Name
-- password: Password associated with DB connection.
-- host: Connection host address.
+A simple MongoDB wrapper for simplifying app connections.
+Basic async CRUD operations, designed to simplify multiple collections in a given DB.
 
+This is my personal learning project that I will probably keep tweaking. Use at your own risk. I make no promises of anything.
 
+Please fork or modify if you like. 
+Or don't.  
 
-### Methods
+You do you.
 
-- getById(ObjectID, collectionName)
+## Methods
 
-- getEntireCollection(collectionName)
+- insertOne(collectionName, payload) => Document
 
-- insertOneItem(collectionName, payload)
+- findById(collectionName, ObjectID ) => Document
 
-- updateOneItem(objectId, collectionName, payload)
+- find(collectionName, query, FindOptions) => array of documents
 
-- deleteOneItem(objectId, collectionName)
+- updateOne(collectionName, mongoID, payload) => updated Document
 
-- getCollectionMap()
+- deleteOneItem(collectionName, objectId) => DeleteResult
 
-- connect()
+- getCollectionsMap() => Record<COLLECTION, collection>
 
-- close()
+### Example Usage
+
+  ```javascript
+  const config: MongoDbConfigI = {
+    connectionString: 'mongodb://localhost:27017/?serverSelectionTimeoutMS=2000',
+    databaseName: 'MyDataBase',
+    collectionNames: ['users', 'kittens', 'suppliers']
+  }
+
+// Instantiate Connector
+  const mongo = new MongoDbConnector(config)
+
+// Get collections map of Uppercase: lowercase strings
+  const collections = mongo.getCollections();
+
+// Use Methods
+  const result = await mongo.findOne(collections.KITTENS, ID);  
+  ```

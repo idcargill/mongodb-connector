@@ -1,18 +1,32 @@
-version: '2'
+version: '3'
 
 services:
   mongoConnector:
     image: node
+
     
   mongo:
     image: mongo
+    container_name: mongo-connector
     restart: always
+
     environment:
+      # - MONGO_USER=user
+      # - MONGO_PASSWORD=password
       - MONGO_INITDB_ROOT_USERNAME=root
       - MONGO_INITDB_ROOT_PASSWORD=password
-  
+      # - MONGO_INITDB_DATABASE=MongoTestDB
+
+    volumes:
+      - mongodbdata:/data/db
+
     ports:
-      - 20717:20717
+      - 27017:27017
     expose:
       - 27017
+
+volumes:
+  mongodbdata:
+    driver: local
+
   

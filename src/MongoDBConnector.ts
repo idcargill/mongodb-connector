@@ -2,42 +2,17 @@ import {
   MongoClient,
   ObjectId,
   Document,
-  ConnectOptions,
   FindOptions,
   DeleteResult,
 } from 'mongodb';
 
-export type Payload = Record<string, any>;
-
-export type NewItemPayload = Payload & { userID: string };
-
-export type CollectionMap = Record<string, string>;
-export interface MongoDbConfigI {
-  databaseName: string;
-  collectionNames: string[];
-  fullConnectionString?: string;
-  timeout?: number;
-  options?: ConnectOptions;
-  baseUrl?: string;
-  userName?: string;
-  password?: string;
-  connectionOptions?: string;
-  port?: number;
-}
-
-export interface MongoDbConnectorI {
-  getDatabaseName: () => string;
-  getCollectionsMap: () => CollectionMap;
-  insertOne: (collectionName: keyof CollectionMap, payload: NewItemPayload) => Document;
-  findByID: (collectionName: keyof CollectionMap, id: ObjectId) => Document;
-  find: (collectionName: keyof CollectionMap, query: any, options: FindOptions) => Document;
-  updateOne: (collectionName: keyof CollectionMap, id: ObjectId, payload: Payload) => Document;
-  deleteOneItem: (
-    collectionName: keyof CollectionMap,
-    id: ObjectId
-  ) => Promise<DeleteResult | null>;
-  getMongoClient: () => MongoClient;
-}
+import {
+  NewItemPayload,
+  CollectionMap,
+  InsertOneResponseType,
+  MongoDbConfigI,
+  MongoDbConnectorI,
+} from './types'
 
 class MongoDBConnector implements MongoDbConnectorI {
   public dbName: string;
@@ -70,6 +45,10 @@ class MongoDBConnector implements MongoDbConnectorI {
 
   public getCollectionsMap = () => this.collectionsMap;
 
+  /**
+   * Provides acceess to the mongo client for custom operations.
+   * @returns mongo client
+   */
   public getMongoClient = () => this.client;
 
   /*
@@ -79,27 +58,38 @@ class MongoDBConnector implements MongoDbConnectorI {
   */
   public async insertOne(
     collection: keyof CollectionMap,
-    payload: NewItemPayload
-  ): Promise<any | null> {
-    console.log('start');
+    payload: NewItemPayload,
+    returnDocument = false,
+  ): Promise<InsertOneResponseType | null> {
+    let response: InsertOneResponseType;
+    
     try {
+    if (!payload?.userID) {
+      throw new Error('userID is required for new records');
+    }
+
       await this.connect();
       const db = await this.getCollection(collection);
-      console.log(db);
-      if (!db) {
-        return null;
-      }
-      const response = await db.insertOne(payload);
-      console.log(response);
-      if (response?.acknowledged && response?.insertedId) {
-        const insertedItem = await db.findOne({ _id: new ObjectId(response.insertedId) });
-        return insertedItem;
+
+      response = await db.insertOne(payload);
+      if (returnDocument) {
+        if (response?.acknowledged && response?.insertedId) {
+          const insertedItem = await db.findOne({ _id: new ObjectId(response.insertedId) });
+          if (insertedItem) {
+            response = insertedItem;
+          }
+        }
       }
     } catch (e: any) {
-      console.log('INSERT ONE ERROR', e.message);
+      if (e.message === 'userID is required for new records') {
+        throw e;
+      } else {
+        throw new Error('INSERT ONE ERROR');
+      }
     } finally {
       await this.close();
     }
+    return response;
   }
 
   /**
@@ -120,7 +110,6 @@ class MongoDBConnector implements MongoDbConnectorI {
           return response;
         }
       }
-      return null;
     } catch (e) {
       console.log(e);
     } finally {
@@ -143,18 +132,22 @@ class MongoDBConnector implements MongoDbConnectorI {
       await this.connect();
       const db = await this.getCollection(collection);
       if (db) {
-        const response = await db.find(query, opt).toArray();
-        if (response) {
-          return response;
-        }
+        return await db.find(query, opt).toArray();
       }
     } catch (e) {
+      throw e;
     } finally {
       await this.close();
     }
-    return null;
   }
 
+  /**
+   * Update 1 record, searched by MongoID
+   * @param collection collection name
+   * @param id ObjectId
+   * @param payload object with userID
+   * @returns Updated Document
+   */
   public async updateOne(
     collection: keyof CollectionMap,
     id: ObjectId,
@@ -180,22 +173,36 @@ class MongoDBConnector implements MongoDbConnectorI {
     return null;
   }
 
-  public async deleteOneItem(collection: keyof CollectionMap, id: ObjectId) {
+  /**
+   * Removes a single document
+   * @param collection name 
+   * @param id ObjectId
+   * @returns Delete result { ok: 1 }
+   */
+  public async deleteOneItem(collection: keyof CollectionMap, id: ObjectId): Promise<DeleteResult | null> {
     try {
       await this.connect();
       const db = await this.getCollection(collection);
       if (db) {
-        const response = await db.deleteOne({ _id: new ObjectId(id) });
-        if (response) {
-          return response;
-        }
+        return await db.deleteOne({ _id: new ObjectId(id) });
       }
     } catch (e) {
-      console.log(e);
+      throw new Error('Delete error, check for DB connection')
     } finally {
       await this.close();
     }
     return null;
+  }
+
+  /**
+   * Test mongo connection with ping command
+   * @returns command ping response
+   */
+  public async testConnection() {
+    await this.client.connect();
+    const res = await this.client.db('admin').command({ ping: 1 });
+    await this.client.close();
+    return res;
   }
 
   /**
@@ -275,11 +282,12 @@ class MongoDBConnector implements MongoDbConnectorI {
    */
   private buildConnectionString = () => {
     const hasPassword = this.password ? '@' : '';
+    const colon = this.password ? ':' : '';
 
     if (this.fullConnectionString) {
       return this.fullConnectionString;
-    } else if (this.baseUrl) {
-      const url = `mongodb://${this.userName}${this.password}${hasPassword}${this.baseUrl}:${this.port}/${this.dbName}?${this.connectionOptions}`;
+    } else if (this.baseUrl && this.userName) {
+      const url = `mongodb://${this.userName}${colon}${this.password}${hasPassword}${this.baseUrl}:${this.port}/${this.dbName}?${this.connectionOptions}`;
       return url;
     } else {
       throw new Error(

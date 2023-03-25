@@ -27,6 +27,8 @@ You do you.
 
 - getCollectionsMap() => Record<COLLECTION, collection>
 
+
+
 ### Example Usage
 
   ```javascript
@@ -45,3 +47,22 @@ You do you.
 // Use Methods
   const result = await mongo.findOne(collections.KITTENS, ID);  
   ```
+
+### Development
+
+To start up docker container:
+> yarn db
+
+
+### Testing
+
+Test are run against a docker or local mongo instance.
+
+Start the docker container:
+> yarn db
+
+Run all tests w/ coverage:
+> yarn test
+
+Run single file tests:
+> yarn test-file "file_name"

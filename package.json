@@ -4,11 +4,16 @@
   "description": "",
   "main": "src/index.ts",
   "scripts": {
+    ".": "====== DEV ======",
     "db": "docker compose up -d",
-    "dev": "ts-node --esm ./src/playground.ts",
-    "k": "ts-node --showConfig",
-    "start": "ts-node ./src/playground.ts",
-    "test": "jest --coverage"
+    "stop": "docker compose down",
+    "dev": "yarn db",
+    "play": "ts-node ./src/playground.ts",
+    "...": "====== Build ======",
+    "build": "tsc ./src/index.ts",     
+    "..":"====== TESTING ======",
+    "test": "jest --coverage",
+    "test-file": "jest --watch"
   },
   "author": "Ian Cargill",
   "license": "ISC",

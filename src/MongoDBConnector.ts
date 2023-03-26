@@ -5,6 +5,7 @@ import {
   FindOptions,
   DeleteResult,
   WithId,
+  Filter,
 } from 'mongodb';
 
 import {
@@ -134,7 +135,7 @@ class MongoDBConnector implements MongoDbConnectorI {
    */
   public async find(
     collection: keyof CollectionMap,
-    query: any,
+    query: Filter<Document>,
     options?: FindOptions
   ) {
     const opt = options || {};

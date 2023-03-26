@@ -7,11 +7,13 @@ import {
   FindOptions,
   DeleteResult,
   MongoClient,
+  Filter,
 } from 'mongodb';
+
 /**
  * Insert one and Update payload
  */
-export type Payload = Record<string, any>;
+export type Payload = Record<string, string | number>;
 
 /**
  * New item payload require a userID.
@@ -63,7 +65,7 @@ export interface MongoDbConnectorI {
   ) => Promise<WithId<Document> | null>;
   find: (
     collectionName: keyof CollectionMap,
-    query: any,
+    query: Filter<Document>,
     options?: FindOptions
   ) => Promise<WithId<Document>[] | null>;
   updateOne: (

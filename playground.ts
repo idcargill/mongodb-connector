@@ -1,5 +1,5 @@
 import MongoDbConnector from './index';
-import { MongoDbConfigI } from './MongoDBConnector';
+import { MongoDbConfigI } from './types';
 import { ObjectId } from 'mongodb';
 
 // const CONNECTION_STRING = 'mongodb://root:password@localhost:27017';

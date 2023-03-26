@@ -10,7 +10,7 @@
     "dev": "yarn db",
     "play": "ts-node ./src/playground.ts",
     "...": "====== Build ======",
-    "build": "tsc ./src/index.ts",
+    "build": "rm -rf build && tsc",
     "..": "====== TESTING ======",
     "test": "jest --coverage",
     "test-file": "jest --watch"

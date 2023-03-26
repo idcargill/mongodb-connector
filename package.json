@@ -10,14 +10,15 @@
     "dev": "yarn db",
     "play": "ts-node ./src/playground.ts",
     "...": "====== Build ======",
-    "build": "tsc ./src/index.ts",     
-    "..":"====== TESTING ======",
+    "build": "rm -rf build && tsc",
+    "..": "====== TESTING ======",
     "test": "jest --coverage",
     "test-file": "jest --watch"
   },
   "author": "Ian Cargill",
   "license": "ISC",
   "dependencies": {
+    "@idcargill/mongodb-connector": "^1.0.0",
     "mongodb": "^4.11.0"
   },
   "devDependencies": {
@@ -28,10 +29,16 @@
     "@types/jest": "^29.2.3",
     "@types/mongodb": "^4.0.7",
     "@types/node": "^18.11.9",
+    "@typescript-eslint/eslint-plugin": "^5.56.0",
+    "@typescript-eslint/parser": "^5.56.0",
     "babel-jest": "^29.3.1",
+    "eslint": "^8.36.0",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-plugin-prettier": "^4.2.1",
     "jest": "^29.3.1",
     "jest-environment-node": "^29.3.1",
     "nodemon": "^2.0.20",
+    "prettier": "^2.8.7",
     "ts-jest": "^29.0.3",
     "ts-node": "^10.9.1",
     "typescript": "^4.8.4"

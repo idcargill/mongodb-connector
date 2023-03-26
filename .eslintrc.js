@@ -1,8 +1,12 @@
 module.exports = {
-  extends: ['next/core-web-vitals', 'plugin:@typescript-eslint/recommended', 'prettier'],
+  parser: '@typescript-eslint/parser',
+  plugins: ['@typescript-eslint', 'prettier'],
+  extends: ['plugin:@typescript-eslint/recommended', 'prettier'],
   root: true,
   rules: {
     'no-var': 'error',
+    'no-console': 1,
+    'prettier/prettier': 2,
     '@typescript-eslint/no-unused-vars': 'error',
     'object-curly-spacing': ['error', 'always'],
     'no-duplicate-imports': 'error',
@@ -29,13 +33,5 @@ module.exports = {
     'jsx-quotes': ['error', 'prefer-double'],
     'no-multiple-empty-lines': ['error', { max: 2 }],
     'arrow-body-style': ['error', 'as-needed'],
-    'react/jsx-sort-props': 'off',
-    'react/function-component-definition': [
-      2,
-      {
-        namedComponents: ['arrow-function', 'function-declaration'],
-        unnammedComponents: 'arrow-function',
-      },
-    ],
   },
 };

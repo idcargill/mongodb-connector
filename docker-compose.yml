@@ -11,11 +11,8 @@ services:
     restart: always
 
     environment:
-      # - MONGO_USER=user
-      # - MONGO_PASSWORD=password
       - MONGO_INITDB_ROOT_USERNAME=root
       - MONGO_INITDB_ROOT_PASSWORD=password
-      # - MONGO_INITDB_DATABASE=MongoTestDB
 
     volumes:
       - mongodbdata:/data/db

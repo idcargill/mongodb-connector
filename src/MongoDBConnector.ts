@@ -4,6 +4,8 @@ import {
   Document,
   FindOptions,
   DeleteResult,
+  WithId,
+  Filter,
 } from 'mongodb';
 
 import {
@@ -12,7 +14,8 @@ import {
   InsertOneResponseType,
   MongoDbConfigI,
   MongoDbConnectorI,
-} from './types'
+  Payload,
+} from './types';
 
 class MongoDBConnector implements MongoDbConnectorI {
   public dbName: string;
@@ -33,10 +36,13 @@ class MongoDBConnector implements MongoDbConnectorI {
     this.password = config?.password || '';
     this.baseUrl = config?.baseUrl || 'localhost';
     this.port = config?.port || 27017;
-    this.fullConnectionString = this.setConnectorString(config.fullConnectionString);
+    this.fullConnectionString = this.setConnectorString(
+      config.fullConnectionString
+    );
     this.collections = this.lowerCaseCollectionNames(config);
     this.collectionsMap = this.buildCollectionMap(config.collectionNames);
-    this.connectionOptions = config?.connectionOptions || 'serverSelectionTimeoutMS=2000';
+    this.connectionOptions =
+      config?.connectionOptions || 'serverSelectionTimeoutMS=2000';
     this.connectionString = this.buildConnectionString();
     this.client = new MongoClient(this.connectionString);
   }
@@ -59,14 +65,14 @@ class MongoDBConnector implements MongoDbConnectorI {
   public async insertOne(
     collection: keyof CollectionMap,
     payload: NewItemPayload,
-    returnDocument = false,
+    returnDocument = false
   ): Promise<InsertOneResponseType | null> {
     let response: InsertOneResponseType;
-    
+
     try {
-    if (!payload?.userID) {
-      throw new Error('userID is required for new records');
-    }
+      if (!payload?.userID) {
+        throw new Error('userID is required for new records');
+      }
 
       await this.connect();
       const db = await this.getCollection(collection);
@@ -74,7 +80,9 @@ class MongoDBConnector implements MongoDbConnectorI {
       response = await db.insertOne(payload);
       if (returnDocument) {
         if (response?.acknowledged && response?.insertedId) {
-          const insertedItem = await db.findOne({ _id: new ObjectId(response.insertedId) });
+          const insertedItem = await db.findOne({
+            _id: new ObjectId(response.insertedId),
+          });
           if (insertedItem) {
             response = insertedItem;
           }
@@ -125,7 +133,11 @@ class MongoDBConnector implements MongoDbConnectorI {
    * @param options mongodb FindOptions
    * @returns
    */
-  public async find(collection: keyof CollectionMap, query: any, options?: FindOptions) {
+  public async find(
+    collection: keyof CollectionMap,
+    query: Filter<Document>,
+    options?: FindOptions
+  ) {
     const opt = options || {};
 
     try {
@@ -139,6 +151,7 @@ class MongoDBConnector implements MongoDbConnectorI {
     } finally {
       await this.close();
     }
+    return null;
   }
 
   /**
@@ -151,8 +164,8 @@ class MongoDBConnector implements MongoDbConnectorI {
   public async updateOne(
     collection: keyof CollectionMap,
     id: ObjectId,
-    payload: any
-  ): Promise<Document | null> {
+    payload: Payload
+  ): Promise<WithId<Document> | null> {
     try {
       await this.connect();
       const db = await this.getCollection(collection);
@@ -175,11 +188,14 @@ class MongoDBConnector implements MongoDbConnectorI {
 
   /**
    * Removes a single document
-   * @param collection name 
+   * @param collection name
    * @param id ObjectId
    * @returns Delete result { ok: 1 }
    */
-  public async deleteOneItem(collection: keyof CollectionMap, id: ObjectId): Promise<DeleteResult | null> {
+  public async deleteOneItem(
+    collection: keyof CollectionMap,
+    id: ObjectId
+  ): Promise<DeleteResult | null> {
     try {
       await this.connect();
       const db = await this.getCollection(collection);
@@ -187,7 +203,7 @@ class MongoDBConnector implements MongoDbConnectorI {
         return await db.deleteOne({ _id: new ObjectId(id) });
       }
     } catch (e) {
-      throw new Error('Delete error, check for DB connection')
+      throw new Error('Delete error, check for DB connection');
     } finally {
       await this.close();
     }
@@ -251,7 +267,7 @@ class MongoDBConnector implements MongoDbConnectorI {
    */
   private buildCollectionMap(collections: string[]): CollectionMap {
     const collectionNameMap = collections.reduce(
-      (accu: CollectionMap, value: string, idx: number) => {
+      (accu: CollectionMap, value: string) => {
         const key = value.toUpperCase();
         accu[key] = value.toLowerCase();
         return accu;
@@ -261,9 +277,8 @@ class MongoDBConnector implements MongoDbConnectorI {
     return collectionNameMap;
   }
 
-  private lowerCaseCollectionNames = (config: MongoDbConfigI) => {
-    return config.collectionNames.map((name) => name.toLowerCase());
-  };
+  private lowerCaseCollectionNames = (config: MongoDbConfigI) =>
+    config.collectionNames.map((name) => name.toLowerCase());
 
   private setConnectorString(str: string | undefined) {
     if (str) {

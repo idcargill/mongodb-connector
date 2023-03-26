@@ -1,4 +1,7 @@
 /node_modules/
 /coverage
 /build
-src/playground.ts
+.env*
+
+# Local testing
+playground.ts

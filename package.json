@@ -10,14 +10,15 @@
     "dev": "yarn db",
     "play": "ts-node ./src/playground.ts",
     "...": "====== Build ======",
-    "build": "tsc ./src/index.ts",     
-    "..":"====== TESTING ======",
+    "build": "tsc ./src/index.ts",
+    "..": "====== TESTING ======",
     "test": "jest --coverage",
     "test-file": "jest --watch"
   },
   "author": "Ian Cargill",
   "license": "ISC",
   "dependencies": {
+    "@idcargill/mongodb-connector": "^1.0.0",
     "mongodb": "^4.11.0"
   },
   "devDependencies": {

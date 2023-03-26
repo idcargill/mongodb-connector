@@ -1,3 +1,13 @@
+import {
+  InsertOneResult,
+  WithId,
+  Document,
+  ConnectOptions,
+  ObjectId,
+  FindOptions,
+  DeleteResult,
+  MongoClient,
+} from 'mongodb';
 /**
  * Insert one and Update payload
  */
@@ -45,9 +55,13 @@ export interface MongoDbConnectorI {
     payload: NewItemPayload, 
     returnDocument?: boolean
     ) => Promise<InsertOneResponseType | null>;
-  findByID: (collectionName: keyof CollectionMap, id: ObjectId) => WithId<Document> | null;
-  find: (collectionName: keyof CollectionMap, query: any, options: FindOptions) => WithId<Document> | WithId<Document[]> | [];
-  updateOne: (collectionName: keyof CollectionMap, id: ObjectId, payload: Payload) => WithId<Document>;
+  findByID: (collectionName: keyof CollectionMap, id: ObjectId) => Promise<WithId<Document> | null>;
+  find: (collectionName: keyof CollectionMap, query: any, options?: FindOptions) => Promise<WithId<Document>[] | null>;
+  updateOne: (
+    collectionName: keyof CollectionMap, 
+    id: ObjectId, 
+    payload: Payload
+    ) => Promise<WithId<Document> | null>;
   deleteOneItem: (
     collectionName: keyof CollectionMap,
     id: ObjectId

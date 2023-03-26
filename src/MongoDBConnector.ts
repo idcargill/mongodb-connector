@@ -4,6 +4,7 @@ import {
   Document,
   FindOptions,
   DeleteResult,
+  WithId,
 } from 'mongodb';
 
 import {
@@ -12,6 +13,7 @@ import {
   InsertOneResponseType,
   MongoDbConfigI,
   MongoDbConnectorI,
+  Payload,
 } from './types'
 
 class MongoDBConnector implements MongoDbConnectorI {
@@ -139,6 +141,7 @@ class MongoDBConnector implements MongoDbConnectorI {
     } finally {
       await this.close();
     }
+    return null;
   }
 
   /**
@@ -151,8 +154,8 @@ class MongoDBConnector implements MongoDbConnectorI {
   public async updateOne(
     collection: keyof CollectionMap,
     id: ObjectId,
-    payload: any
-  ): Promise<Document | null> {
+    payload: Payload
+  ): Promise<WithId<Document> | null> {
     try {
       await this.connect();
       const db = await this.getCollection(collection);

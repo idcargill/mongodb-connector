@@ -67,7 +67,7 @@ export interface MongoDbConnectorI {
     collectionName: keyof CollectionMap,
     query: Filter<Document>,
     options?: FindOptions
-  ) => Promise<WithId<Document>[] | null>;
+  ) => Promise<WithId<Document>[]>;
   updateOne: (
     collectionName: keyof CollectionMap,
     id: ObjectId,

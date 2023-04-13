@@ -114,12 +114,14 @@ class MongoDBConnector implements MongoDbConnectorI {
 
       if (db) {
         const response = await db.findOne({ _id: new ObjectId(id) });
-        if (response) {
+        if (response?._id) {
           return response;
         }
       }
-    } catch (e) {
-      console.log(e);
+    } catch (e: any) {
+      if (e) {
+        throw e;
+      }
     } finally {
       await this.close();
     }
@@ -151,7 +153,7 @@ class MongoDBConnector implements MongoDbConnectorI {
     } finally {
       await this.close();
     }
-    return null;
+    return [];
   }
 
   /**
@@ -167,6 +169,7 @@ class MongoDBConnector implements MongoDbConnectorI {
     payload: Payload
   ): Promise<WithId<Document> | null> {
     try {
+      // TODO convert to update method for nodejs
       await this.connect();
       const db = await this.getCollection(collection);
       const response = await db.findOneAndUpdate(
@@ -177,9 +180,13 @@ class MongoDBConnector implements MongoDbConnectorI {
       if (response.ok === 1) {
         return response.value;
       }
-    } catch (e) {
-      console.log(e);
-      return null;
+      throw new Error();
+    } catch (e: any) {
+      if (e) {
+        const err = new Error('UPDATE ERROR');
+        err.stack = e?.stack;
+        throw err;
+      }
     } finally {
       await this.close();
     }
@@ -216,9 +223,16 @@ class MongoDBConnector implements MongoDbConnectorI {
    */
   public async testConnection() {
     await this.client.connect();
-    const res = await this.client.db('admin').command({ ping: 1 });
-    await this.client.close();
-    return res;
+    try {
+      const res = await this.client.db('admin').command({ ping: 1 });
+      return res;
+    } catch (e: any) {
+      if (e) {
+        throw new Error('CONNECTION ERROR');
+      }
+    } finally {
+      await this.client.close();
+    }
   }
 
   /**
@@ -301,12 +315,12 @@ class MongoDBConnector implements MongoDbConnectorI {
 
     if (this.fullConnectionString) {
       return this.fullConnectionString;
-    } else if (this.baseUrl && this.userName) {
+    } else if (this.baseUrl) {
       const url = `mongodb://${this.userName}${colon}${this.password}${hasPassword}${this.baseUrl}:${this.port}/${this.dbName}?${this.connectionOptions}`;
       return url;
     } else {
       throw new Error(
-        'MongoDB config object has incorrect connection information.  provide either a fullConnectionString or [baseUrl (localhost), port, userName, password, databaseName'
+        'MongoDB config object has incorrect connection information.  provide either a fullConnectionString or a baseUrl (localhost)'
       );
     }
   };

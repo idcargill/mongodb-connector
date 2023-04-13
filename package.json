@@ -4,14 +4,14 @@
   "description": "",
   "main": "src/index.ts",
   "scripts": {
-    ".": "====== DEV ======",
+    "====== DEV ======": ".",
     "db": "docker compose up -d",
     "stop": "docker compose down",
     "dev": "yarn db",
     "play": "ts-node ./src/playground.ts",
-    "...": "====== Build ======",
+    "====== Build ======": ".",
     "build": "rm -rf build && tsc",
-    "..": "====== TESTING ======",
+    "====== TESTING ======": ".",
     "test": "jest --coverage",
     "test-file": "jest --watch"
   },

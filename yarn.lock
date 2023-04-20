@@ -1756,13 +1756,6 @@
   resolved "https://registry.yarnpkg.com/@humanwhocodes/object-schema/-/object-schema-1.2.1.tgz#b520529ec21d8e5945a1851dfd1c32e94e39ff45"
   integrity sha512-ZnQMnLV4e7hDlUvw8H+U8ASL02SS2Gn6+9Ac3wGGLIe7+je2AeAOxPY+izIPJDfFDb7eDjev0Us8MO1iFRN8hA==
 
-"@idcargill/mongodb-connector@^1.0.0":
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/@idcargill/mongodb-connector/-/mongodb-connector-1.0.0.tgz#a78a1e30a25ec4f9e5c64bf23a21a2b44f194e3e"
-  integrity sha512-wHpEreTW1H/m7coqruYm3E72k1mp2npZkPksFVCJfCwb9h8n7w6Da/NKpldHboQoTVXKRE1qJNWrScckIfl4XQ==
-  dependencies:
-    mongodb "^4.11.0"
-
 "@istanbuljs/load-nyc-config@^1.0.0":
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@istanbuljs/load-nyc-config/-/load-nyc-config-1.1.0.tgz#fd3db1d59ecf7cf121e80650bb86712f9b55eced"

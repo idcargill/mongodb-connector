@@ -6,6 +6,8 @@ import {
   DeleteResult,
   WithId,
   Filter,
+  Db,
+  Collection,
 } from 'mongodb';
 
 import {
@@ -18,226 +20,45 @@ import {
 } from './types';
 
 class MongoDBConnector implements MongoDbConnectorI {
-  public dbName: string;
+  public databaseName: string;
   private connectionString: string;
-  private fullConnectionString: string | undefined;
+  private collectionName: string;
   private client: MongoClient;
-  private collections: string[];
-  private collectionsMap: CollectionMap;
-  private userName: string;
-  private password: string;
-  private baseUrl: string;
-  private connectionOptions: string;
-  private port: number;
+  private db: Collection<Document>;
 
   constructor(config: MongoDbConfigI) {
-    this.dbName = config.databaseName;
-    this.userName = config?.userName || '';
-    this.password = config?.password || '';
-    this.baseUrl = config?.baseUrl || 'localhost';
-    this.port = config?.port || 27017;
-    this.fullConnectionString = this.setConnectorString(
-      config.fullConnectionString
-    );
-    this.collections = this.lowerCaseCollectionNames(config);
-    this.collectionsMap = this.buildCollectionMap(config.collectionNames);
-    this.connectionOptions =
-      config?.connectionOptions || 'serverSelectionTimeoutMS=2000';
-    this.connectionString = this.buildConnectionString();
-    this.client = new MongoClient(this.connectionString);
-  }
+    if (!config?.connectionString) {
+      throw new Error('Valid connection string is required for MongoDbConfig');
+    }
 
-  public getDatabaseName = () => this.dbName;
+    if (!config?.databaseName) {
+      throw new Error('databaseName is required in MongoDbConfig');
+    }
 
-  public getCollectionsMap = () => this.collectionsMap;
-
-  /**
-   * Provides acceess to the mongo client for custom operations.
-   * @returns mongo client
-   */
-  public getMongoClient = () => this.client;
-
-  /*
-  @param collection string
-  @param payload: object to be inserted, userID required
-  @return Newly inserted item or null
-  */
-  public async insertOne(
-    collection: keyof CollectionMap,
-    payload: NewItemPayload,
-    returnDocument = false
-  ): Promise<InsertOneResponseType | null> {
-    let response: InsertOneResponseType;
+    if (!config?.collectionName) {
+      throw new Error('collectionName is required in MongoDbConfig');
+    }
 
     try {
-      if (!payload?.userID) {
-        throw new Error('userID is required for new records');
-      }
-
-      await this.connect();
-      const db = await this.getCollection(collection);
-
-      response = await db.insertOne(payload);
-      if (returnDocument) {
-        if (response?.acknowledged && response?.insertedId) {
-          const insertedItem = await db.findOne({
-            _id: new ObjectId(response.insertedId),
-          });
-          if (insertedItem) {
-            response = insertedItem;
-          }
-        }
-      }
+      this.databaseName = config.databaseName;
+      this.connectionString = config?.connectionString;
+      this.collectionName = config.collectionName;
+      this.client = new MongoClient(this.connectionString);
+      this.db = this.client
+        .db(this.databaseName)
+        .collection(this.collectionName);
     } catch (e: any) {
-      if (e.message === 'userID is required for new records') {
+      if (e.message === 'Mongodb connection string is required') {
         throw e;
       } else {
-        throw new Error('INSERT ONE ERROR');
+        throw new Error('mongo  connector setup is not correct');
       }
-    } finally {
-      await this.close();
-    }
-    return response;
-  }
-
-  /**
-   * Find by MongoID
-   * @param collection string
-   * @param id mongoDB ID
-   * @returns Document
-   */
-  // // Returns 1 record
-  public async findByID(collection: keyof CollectionMap, id: ObjectId) {
-    try {
-      await this.connect();
-      const db = await this.getCollection(collection);
-
-      if (db) {
-        const response = await db.findOne({ _id: new ObjectId(id) });
-        if (response?._id) {
-          return response;
-        }
-      }
-    } catch (e: any) {
-      if (e) {
-        throw e;
-      }
-    } finally {
-      await this.close();
-    }
-    return null;
-  }
-
-  /**
-   * Passthrough for mongo find operations
-   * @param collection keyof CollectionMap
-   * @param query mongodb document query object
-   * @param options mongodb FindOptions
-   * @returns
-   */
-  public async find(
-    collection: keyof CollectionMap,
-    query: Filter<Document>,
-    options?: FindOptions
-  ) {
-    const opt = options || {};
-
-    try {
-      await this.connect();
-      const db = await this.getCollection(collection);
-      if (db) {
-        return await db.find(query, opt).toArray();
-      }
-    } catch (e) {
-      throw e;
-    } finally {
-      await this.close();
-    }
-    return [];
-  }
-
-  /**
-   * Update 1 record, searched by MongoID
-   * @param collection collection name
-   * @param id ObjectId
-   * @param payload object with userID
-   * @returns Updated Document
-   */
-  public async updateOne(
-    collection: keyof CollectionMap,
-    id: ObjectId,
-    payload: Payload
-  ): Promise<WithId<Document> | null> {
-    try {
-      // TODO convert to update method for nodejs
-      await this.connect();
-      const db = await this.getCollection(collection);
-      const response = await db.findOneAndUpdate(
-        { _id: new ObjectId(id) },
-        { $set: payload },
-        { returnDocument: 'after' }
-      );
-      if (response.ok === 1) {
-        return response.value;
-      }
-      throw new Error();
-    } catch (e: any) {
-      if (e) {
-        const err = new Error('UPDATE ERROR');
-        err.stack = e?.stack;
-        throw err;
-      }
-    } finally {
-      await this.close();
-    }
-    return null;
-  }
-
-  /**
-   * Removes a single document
-   * @param collection name
-   * @param id ObjectId
-   * @returns Delete result { ok: 1 }
-   */
-  public async deleteOneItem(
-    collection: keyof CollectionMap,
-    id: ObjectId
-  ): Promise<DeleteResult | null> {
-    try {
-      await this.connect();
-      const db = await this.getCollection(collection);
-      if (db) {
-        return await db.deleteOne({ _id: new ObjectId(id) });
-      }
-    } catch (e) {
-      throw new Error('Delete error, check for DB connection');
-    } finally {
-      await this.close();
-    }
-    return null;
-  }
-
-  /**
-   * Test mongo connection with ping command
-   * @returns command ping response
-   */
-  public async testConnection() {
-    await this.client.connect();
-    try {
-      const res = await this.client.db('admin').command({ ping: 1 });
-      return res;
-    } catch (e: any) {
-      if (e) {
-        throw new Error('CONNECTION ERROR');
-      }
-    } finally {
-      await this.client.close();
     }
   }
 
-  /**
-   * Database Connect
-   */
+  // /**
+  //  * Database Connect
+  //  */
   public async connect() {
     await this.client.connect();
   }
@@ -249,81 +70,210 @@ class MongoDBConnector implements MongoDbConnectorI {
     await this.client.close();
   }
 
+  public getDatabaseName = () => this.databaseName;
+
   /**
-   * Accesses or creates a new collection if the collection name is provided in the config
-   * @param collection string
-   * @returns mongo Collection
+   * Provides acceess to the mongo client for custom operations.
+   * @returns mongo client
    */
-  private async getCollection(collection: keyof CollectionMap) {
-    if (this.collections.includes(collection)) {
-      let db = this.client.db(this.dbName);
-      if (!db) {
-        try {
-          await this.connect();
-          await this.client.db(this.dbName).createCollection(collection);
-        } catch (e) {
-          throw new Error('Create Collection Error');
-        } finally {
-          await this.close();
+  public getMongoClient = () => this.client;
+
+  /*
+  @param payload: object to be inserted, userID required
+  @return Newly inserted item or null
+  */
+  public async insertOne(
+    payload: NewItemPayload,
+    returnDocument = false
+  ): Promise<InsertOneResponseType | WithId<Document>> {
+    await this.connect();
+    try {
+      if (!payload?.userID) {
+        throw new Error('userID is required for new records');
+      }
+
+      const res = await this.db.insertOne(payload);
+
+      if (returnDocument) {
+        if (res?.acknowledged && res?.insertedId) {
+          const insertedItem = await this.db.findOne({
+            _id: new ObjectId(res.insertedId),
+          });
+          if (insertedItem) {
+            return insertedItem;
+          }
         }
       }
-      // const collectionName = collection.toLowerCase();
-      db = this.client.db(this.dbName);
-      return db.collection(collection);
+      return res;
+    } catch (e: any) {
+      if (e.message === 'userID is required for new records') {
+        throw e;
+      } else {
+        throw e;
+      }
+    } finally {
+      await this.close();
     }
-    throw new Error('Collection not found');
   }
+
+  // /**
+  //  * Find by MongoID
+  //  * @param collection string
+  //  * @param id mongoDB ID
+  //  * @returns Document
+  //  */
+  // // // Returns 1 record
+  // public async findByID(collection: keyof CollectionMap, id: ObjectId) {
+  //   try {
+  //     await this.connect();
+  //     const db = await this.getCollection(collection);
+
+  //     if (db) {
+  //       const response = await db.findOne({ _id: new ObjectId(id) });
+  //       if (response?._id) {
+  //         return response;
+  //       }
+  //     }
+  //   } catch (e: any) {
+  //     if (e) {
+  //       throw e;
+  //     }
+  //   } finally {
+  //     await this.close();
+  //   }
+  //   return null;
+  // }
+
+  // /**
+  //  * Passthrough for mongo find operations
+  //  * @param collection keyof CollectionMap
+  //  * @param query mongodb document query object
+  //  * @param options mongodb FindOptions
+  //  * @returns
+  //  */
+  // public async find(
+  //   collection: keyof CollectionMap,
+  //   query: Filter<Document>,
+  //   options?: FindOptions
+  // ) {
+  //   const opt = options || {};
+
+  //   try {
+  //     await this.connect();
+  //     const db = await this.getCollection(collection);
+  //     if (db) {
+  //       return await db.find(query, opt).toArray();
+  //     }
+  //   } catch (e) {
+  //     throw e;
+  //   } finally {
+  //     await this.close();
+  //   }
+  //   return [];
+  // }
 
   /**
-   * Maps and normalizes collection names
-   * @param collections string
-   * @returns CollectionMap
+   * Update 1 record, searched by MongoID
+   * @param collection collection name
+   * @param id ObjectId
+   * @param payload object with userID
+   * @returns Updated Document
    */
-  private buildCollectionMap(collections: string[]): CollectionMap {
-    const collectionNameMap = collections.reduce(
-      (accu: CollectionMap, value: string) => {
-        const key = value.toUpperCase();
-        accu[key] = value.toLowerCase();
-        return accu;
-      },
-      {} as CollectionMap
-    );
-    return collectionNameMap;
-  }
+  // public async updateOne(
+  //   id: ObjectId,
+  //   payload: Payload
+  // ): Promise<WithId<Document> | null> {
+  //   try {
+  //     // TODO convert to update method for nodejs
+  //     await this.connect();
+  //     const db = await this.getCollection(collection);
+  //     const response = await db.findOneAndUpdate(
+  //       { _id: new ObjectId(id) },
+  //       { $set: payload },
+  //       { returnDocument: 'after' }
+  //     );
+  //     if (response.ok === 1) {
+  //       return response.value;
+  //     }
+  //     throw new Error();
+  //   } catch (e: any) {
+  //     if (e) {
+  //       const err = new Error('UPDATE ERROR');
+  //       err.stack = e?.stack;
+  //       throw err;
+  //     }
+  //   } finally {
+  //     await this.close();
+  //   }
+  //   return null;
+  // }
 
-  private lowerCaseCollectionNames = (config: MongoDbConfigI) =>
-    config.collectionNames.map((name) => name.toLowerCase());
+  // /**
+  //  * Removes a single document
+  //  * @param collection name
+  //  * @param id ObjectId
+  //  * @returns Delete result { ok: 1 }
+  //  */
+  // public async deleteOneItem(
+  //   collection: keyof CollectionMap,
+  //   id: ObjectId
+  // ): Promise<DeleteResult | null> {
+  //   try {
+  //     await this.connect();
+  //     const db = await this.getCollection(collection);
+  //     if (db) {
+  //       return await db.deleteOne({ _id: new ObjectId(id) });
+  //     }
+  //   } catch (e) {
+  //     throw new Error('Delete error, check for DB connection');
+  //   } finally {
+  //     await this.close();
+  //   }
+  //   return null;
+  // }
 
-  private setConnectorString(str: string | undefined) {
-    if (str) {
-      return str;
-    }
-  }
+  // /**
+  //  * Test mongo connection with ping command
+  //  * @returns command ping response
+  //  */
+  // public async testConnection() {
+  //   await this.client.connect();
+  //   try {
+  //     const res = await this.client.db('admin').command({ ping: 1 });
+  //     return res;
+  //   } catch (e: any) {
+  //     if (e) {
+  //       throw new Error('CONNECTION ERROR');
+  //     }
+  //   } finally {
+  //     await this.client.close();
+  //   }
+  // }
 
-  /**
-   * Uses either a full connection string or builds from the config object
-   * full ex: mongodb://userName:password
-   * baseUrl: default localhost
-   * port:  default 27017
-   * userName: optional
-   * password: optional
-   * @returns Connection string or Throws error
-   */
-  private buildConnectionString = () => {
-    const hasPassword = this.password ? '@' : '';
-    const colon = this.password ? ':' : '';
-
-    if (this.fullConnectionString) {
-      return this.fullConnectionString;
-    } else if (this.baseUrl) {
-      const url = `mongodb://${this.userName}${colon}${this.password}${hasPassword}${this.baseUrl}:${this.port}/${this.dbName}?${this.connectionOptions}`;
-      return url;
-    } else {
-      throw new Error(
-        'MongoDB config object has incorrect connection information.  provide either a fullConnectionString or a baseUrl (localhost)'
-      );
-    }
-  };
+  // /**
+  //  * Accesses or creates a new collection if the collection name is provided in the config
+  //  * @param collection string
+  //  * @returns mongo Collection
+  //  */
+  // private async getCollection(collection: keyof CollectionMap) {
+  //   if (this.collections.includes(collection)) {
+  //     let db = this.client.db(this.dbName);
+  //     if (!db) {
+  //       try {
+  //         await this.connect();
+  //         await this.client.db(this.dbName).createCollection(collection);
+  //       } catch (e) {
+  //         throw new Error('Create Collection Error');
+  //       } finally {
+  //         await this.close();
+  //       }
+  //     }
+  //     // const collectionName = collection.toLowerCase();
+  //     db = this.client.db(this.dbName);
+  //     return db.collection(collection);
+  //   }
+  //   throw new Error('Collection not found');
+  // }
 }
 
 export default MongoDBConnector;

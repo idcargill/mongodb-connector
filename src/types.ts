@@ -40,42 +40,27 @@ export type InsertOneResponseType =
  */
 export interface MongoDbConfigI {
   databaseName: string;
-  collectionNames: string[];
-  fullConnectionString?: string;
+  connectionString: string;
+  collectionName: string;
   timeout?: number;
   options?: ConnectOptions;
-  baseUrl?: string;
-  userName?: string;
-  password?: string;
-  connectionOptions?: string;
-  port?: number;
 }
 
 export interface MongoDbConnectorI {
+  getMongoClient: () => MongoClient;
   getDatabaseName: () => string;
-  getCollectionsMap: () => CollectionMap;
   insertOne: (
-    collectionName: keyof CollectionMap,
     payload: NewItemPayload,
     returnDocument?: boolean
   ) => Promise<InsertOneResponseType | null>;
-  findByID: (
-    collectionName: keyof CollectionMap,
-    id: ObjectId
-  ) => Promise<WithId<Document> | null>;
-  find: (
-    collectionName: keyof CollectionMap,
-    query: Filter<Document>,
-    options?: FindOptions
-  ) => Promise<WithId<Document>[]>;
-  updateOne: (
-    collectionName: keyof CollectionMap,
-    id: ObjectId,
-    payload: Payload
-  ) => Promise<WithId<Document> | null>;
-  deleteOneItem: (
-    collectionName: keyof CollectionMap,
-    id: ObjectId
-  ) => Promise<DeleteResult | null>;
-  getMongoClient: () => MongoClient;
+  // findByID: (id: ObjectId) => Promise<WithId<Document> | null>;
+  // find: (
+  //   query: Filter<Document>,
+  //   options?: FindOptions
+  // ) => Promise<WithId<Document>[]>;
+  // updateOne: (
+  //   id: ObjectId,
+  //   payload: Payload
+  // ) => Promise<WithId<Document> | null>;
+  // deleteOneItem: (id: ObjectId) => Promise<DeleteResult | null>;
 }

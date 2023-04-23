@@ -2,7 +2,22 @@
   "name": "mongodb-connector",
   "version": "2.0.0",
   "description": "",
-  "main": "src/index.ts",
+  "main": "build/index.js",
+  "types": "build/index.d.ts",
+  "keywords": [
+    "mongodb, mongodb-connector, database-connector"
+  ],
+  "author": "Ian Cargill",
+  "homepage": "https://www.npmjs.com/package/@idcargill/mongodb-connector",
+  "repository": {
+    "url": "https://github.com/idcargill/mongodb-connector",
+    "type": "git"
+  },
+  "license": "ISC",
+  "files": [
+    "index.ts",
+    "build"
+  ],
   "scripts": {
     "====== DEV ======": ".",
     "start:db": "docker compose up -d",
@@ -15,8 +30,6 @@
     "test": "jest --coverage",
     "test-file": "jest --watch"
   },
-  "author": "Ian Cargill",
-  "license": "ISC",
   "dependencies": {
     "mongodb": "^4.11.0"
   },

@@ -1,4 +1,4 @@
-import MongoDBConnector from './MongoDBConnector';
-import { MongoDbConfigI, MongoDbConnectorI } from './types';
-export { MongoDbConfigI, MongoDbConnectorI };
+import MongoDBConnector from './lib/MongodbConnector';
+export * from './lib/types';
+
 export default MongoDBConnector;

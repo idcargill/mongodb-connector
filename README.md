@@ -11,6 +11,8 @@ Methods are wrapped async and wrapped in try/catch blocks to simplify repeated c
 A minimal config object is used to create a MongoDbConnector instance.
 
 ```javascript
+import MongoDBConnector, { MongoDbConfigI } from 'mongodb-connector';
+
 const config: MongoDbConfigI = {
   databaseName: 'MyDataBase',
   collectionName: 'spoon',

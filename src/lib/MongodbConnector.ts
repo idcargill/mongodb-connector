@@ -9,7 +9,7 @@ import {
   Collection,
 } from 'mongodb';
 
-import {
+import type {
   NewItemPayload,
   InsertOneResponseType,
   MongoDbConfigI,

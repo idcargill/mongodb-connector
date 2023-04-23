@@ -1,12 +1,12 @@
 {
   "name": "mongodb-connector",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "",
   "main": "src/index.ts",
   "scripts": {
     "====== DEV ======": ".",
-    "db": "docker compose up -d",
-    "stop": "docker compose down",
+    "start:db": "docker compose up -d",
+    "stop:db": "docker compose down",
     "dev": "yarn db",
     "play": "ts-node ./src/playground.ts",
     "====== Build ======": ".",

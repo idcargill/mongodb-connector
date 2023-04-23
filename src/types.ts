@@ -10,8 +10,6 @@ import {
   Filter,
 } from 'mongodb';
 
-export type * from 'mongodb';
-
 export type Payload = Record<string, string | number>;
 
 export type NewItemPayload = Payload & { userID: string };

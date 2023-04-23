@@ -1,4 +1,10 @@
-import { FindOptions, ObjectId, DeleteResult, MongoClient } from 'mongodb';
+import {
+  FindOptions,
+  ObjectId,
+  DeleteResult,
+  MongoClient,
+  InsertOneResult,
+} from 'mongodb';
 import MongoDBConnector from '../src/MongoDBConnector';
 import { MongoDbConfigI, NewItemPayload } from '../src/types';
 
@@ -153,7 +159,7 @@ describe('CRUD operations', () => {
       job: 'fish guy',
     };
 
-    const newRecord = await mongo.insertOne(payload);
+    const newRecord = (await mongo.insertOne(payload)) as InsertOneResult;
     const id = newRecord?.insertedId;
     const result = await mongo.findByID(id);
     expect(result).toBeDefined();
@@ -226,7 +232,7 @@ describe('CRUD operations', () => {
       car: 'lemon',
     };
 
-    const result = await mongo.insertOne(person);
+    const result = (await mongo.insertOne(person)) as InsertOneResult;
     const id = result?.insertedId;
     const updatedRecord = await mongo.updateOne(id, updatePayload);
     expect(updatedRecord).toMatchObject({
@@ -277,7 +283,7 @@ describe('CRUD operations', () => {
       userID: '333',
       pet: 'kitten',
     };
-    const result = await mongo.insertOne(person);
+    const result = (await mongo.insertOne(person)) as InsertOneResult;
     const id = result?.insertedId;
     const deleteResp = await mongo.deleteOneItem(id);
     expect(deleteResp).toBeDefined();

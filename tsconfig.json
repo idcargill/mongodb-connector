@@ -1,33 +1,25 @@
 {
   "compilerOptions": {
     /* Visit https://aka.ms/tsconfig to read more about this file */
-    "module": "commonjs", /* Specify what module code is generated. */
-    "target": "es2016", /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */
-    "esModuleInterop": true, /* Emit additional JavaScript to ease support for importing CommonJS modules. This enables 'allowSyntheticDefaultImports' for type compatibility. */
-    "forceConsistentCasingInFileNames": true, /* Ensure that casing is correct in imports. */
-    "strict": true, /* Enable all strict type-checking options. */
-    "skipLibCheck": true, /* Skip type checking all .d.ts files. */
-    "resolveJsonModule": true, /* Enable importing .json files. */
-    "allowJs": true, /* Allow JavaScript files to be a part of your program. Use the 'checkJS' option to get errors from these files. */
-    "outDir": "build", /* Specify an output folder for all emitted files. */
-    "rootDir": "src", /* Specify the root folder within your source files. */
-    "noImplicitAny": true, /* Enable error reporting for expressions and declarations with an implied 'any' type. */
-    "moduleResolution": "node", /* Specify how TypeScript looks up a file from a given module specifier. */
-    "sourceMap": true, /* Create source map files for emitted JavaScript files. */
+    "module": "commonjs" /* Specify what module code is generated. */,
+    "target": "es2016" /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */,
+    "esModuleInterop": true /* Emit additional JavaScript to ease support for importing CommonJS modules. This enables 'allowSyntheticDefaultImports' for type compatibility. */,
+    "forceConsistentCasingInFileNames": true /* Ensure that casing is correct in imports. */,
+    "strict": true /* Enable all strict type-checking options. */,
+    "skipLibCheck": true /* Skip type checking all .d.ts files. */,
+    "resolveJsonModule": true /* Enable importing .json files. */,
+    "allowJs": true /* Allow JavaScript files to be a part of your program. Use the 'checkJS' option to get errors from these files. */,
+    "outDir": "build" /* Specify an output folder for all emitted files. */,
+    "rootDir": "src" /* Specify the root folder within your source files. */,
+    "noImplicitAny": true /* Enable error reporting for expressions and declarations with an implied 'any' type. */,
+    "moduleResolution": "node" /* Specify how TypeScript looks up a file from a given module specifier. */,
+    "sourceMap": true /* Create source map files for emitted JavaScript files. */,
     "types": [
       "@types/node",
       "@types/jest"
-    ], /* Specify type package names to be included without being referenced in a source file. */
-    "typeRoots": [
-      "./node_modules/@types",
-      ".typings"
-    ],
+    ] /* Specify type package names to be included without being referenced in a source file. */,
+    "typeRoots": ["./node_modules/@types", ".typings"]
   },
-  "include": [
-    "src/**/*",
-  ],
-  "exclude": [
-    "node_modules",
-    "build/**/*",
-  ]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "build/**/*", "src/playground.ts"]
 }

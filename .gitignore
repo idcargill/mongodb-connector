@@ -2,6 +2,3 @@
 /coverage
 /build
 .env*
-
-# Local testing
-playground.ts

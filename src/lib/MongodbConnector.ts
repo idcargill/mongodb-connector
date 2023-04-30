@@ -140,7 +140,6 @@ class MongoDBConnector implements MongoDbConnectorI {
     payload: Payload
   ): Promise<WithId<Document> | null> {
     try {
-      // TODO convert to update method for nodejs
       await this.connect();
       const response = await this.db.findOneAndUpdate(
         { _id: new ObjectId(id) },

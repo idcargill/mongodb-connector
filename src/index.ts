@@ -1,9 +1,4 @@
-import MongoDBConnector from './Connector/MongoDBConnector';
-import {
-  CollectionMap,
-  mongoConnectorConfig,
-  KeyValuePair,
-} from './Connector/models';
+import MongoDBConnector from './lib/MongodbConnector';
+export * from './lib/types';
 
 export default MongoDBConnector;
-export { CollectionMap, mongoConnectorConfig, KeyValuePair };

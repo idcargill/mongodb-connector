@@ -1,95 +1,102 @@
-# MongoDB-Connector
+# Mongodb Connector - App Wrapper
 
-[npm](https://www.npmjs.com/package/@idcargill/mongodb-connector)
+[NPM](https://www.npmjs.com/package/@idcargill/mongodb-connector)
 
-> npm install @idcargill/mongodb-connector
+A simple MongoDB wrapper for CRUD operations.
 
-A simple abstract class wrapper around the MongoDB Node driver for common opperations.
-For use with a single database with a single or multiple collections.
+Methods are wrapped async and wrapped in try/catch blocks to simplify repeated connections. Each instance connects to a single collection.
 
-Methods standardize CRUD operations across different collection names.
+## Config
 
-## mongoConnectorConfig
-
-- dbName: Database name. My_Business_DB
-- collections: Array of string names of collections in provided database. ["Users", "Inventory", "Orders"]
-- connectionString: http://localhost:27017/?maxPoolSize=20&w=majority
-
-## Usage
-
-The connector takes a DATABASE NAME and array of COLLECTION names. CRUD methods take the collection name as the first argument.
-Connector uses a collectionsMap normalized as UPPER_CASE:lower_case naming. Available with getCollectionMap();
-
-## Requirements
-
-    - Docker
-    - Docker compose
-
-## Setup
-
-    > npm i
-    > npm run setup
-
-### Example Use
-
-Checkout src/example.ts for implemenation example.
-
-Run code example:
-
-First setup Mongodb docker container:
-
-> npm run setup
-
-Then run example
-
-> npm run example
-
-Teardown
-
-> npm run stop
+A minimal config object is used to create a MongoDbConnector instance.
 
 ```javascript
-const sampleConfig: mongoConnectorConfig = {
-  databaseName: 'SampleDB',
-  collections: ['users', 'inventory'],
-  connectionString: 'mongodb://localhost:27017',
+import MongoDBConnector, { MongoDbConfigI } from 'mongodb-connector';
+
+const config: MongoDbConfigI = {
+  databaseName: 'MyDataBase',
+  collectionName: 'spoon',
+  connectionString: 'mongodb://localhost:27017/?serverSelectionTimeoutMS=2000',
 };
-const myDbConnector = new MongoConnector(sampleConfig);
-const collectionMap = myDbConnector.getCollectionMap();
 
-// Get entire collection by name
-const dataArr = myDbConnector.getEntireColleciton(Collecion.USERS);
-
-// Inserting a document will return the new collection Doclument with ID
-const newUser = myDbConnector.inertOneItem(Collection.USERS, payload);
+const mongo = new MongoDbConnector(config);
 ```
 
-### Methods
+## Methods
 
-- getById(CollctionName, ID)
+- isMongoConnected() => boolean
 
-- getEntireCollection(collectionName)
+- insertOne(payload) => InsertOneResult { acknowledged, insertedId }
 
-- insertOneItem(collectionName, payload)
+- insertOne(payload, true) => Inserted document with \_id
 
-- updateOneItem(collectionName, objectId, payload)
+- findById(ObjectID) => Document
 
-- deleteOneItem(collectionName, objectId)
+- find(query, FindOptions) => Passthrough for Mongodb find operations
 
-- getCollectionMap(): Retunrs a UPPER:lower map for collection names.
+- updateOne(mongoID, payload) => updated Document
 
-- connect(): Connects to DB
+- deleteOneItem(objectId) => DeleteResult
 
-- close(): Closes DB connection
+### Example Usage
+
+See src/playground.ts for examples
+
+```javascript
+const newItem: NewItemPayload = {
+  userID: 'Required',
+  anything: 'anything',
+};
+
+// Return new document with _id
+const doc1 = await mongo.insertOne(newItem, true) as WithId<Document>;
+// doc1 is a Document
+
+const doc2 = await mongo.insertOne(newItem) as InsertOneResult;
+// doc2 === { acknowledged: true, insertedId: new ObjectId('##########')}
+
+const updatedDoc = await mongo.updateOne(doc1._id, { job: 'pizza delivery guy' });
+// Document
+
+const updatedDocSame = await mongo.findByID(dock1_id);
+// Document
+
+const updatedDocSame = await mongo.find({ _id: doc1._id }, { projection: { job: 1 }});
+// Document
+
+const deleteResponse = await mongo.deleteOneItem(doc1._id);
+// Deleted response: { acknowledged: true, deletedCount: 1 }
+
+```
+
+### Development
+
+To start up docker container:
+
+> yarn start:db
+
+### Example output
+
+To experiment, feel free to modify src/playground.ts and run:
+
+> yarn play
 
 ### Testing
 
-A local mongo image is run in docker for testing. Database information is destroyed after tests are run.
+Test are run against a docker or local mongo instance.
 
-First make sure mongodb container is running:
+Start the docker container:
 
-> npm run setup
+> yarn start:db
 
-Test will run against the docker container. You do not need to have mongodb installed locally.
+Run all tests w/ coverage:
 
-> npm run test
+> yarn test
+
+Run single file tests:
+
+> yarn test-file "file_name"
+
+### Stop Docker
+
+> yarn stop:db

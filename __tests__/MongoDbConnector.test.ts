@@ -1,173 +1,307 @@
-import MongoDBConnector from '../src/index';
-import { mongoConnectorConfig, CollectionMap } from '../src/index';
-import { ObjectId } from 'mongodb';
+import {
+  FindOptions,
+  ObjectId,
+  DeleteResult,
+  MongoClient,
+  InsertOneResult,
+} from 'mongodb';
+import MongoDBConnector, { MongoDbConfigI, NewItemPayload } from '../src';
 
-const mockConfig: mongoConnectorConfig = {
-  databaseName: 'databaseName',
-  collections: ['Test_DB', 'Test_DB2'],
-  connectionString: 'mongodb://localhost:27017/?maxPoolSize=20&w=majority',
+const testConnectionString =
+  'mongodb://root:password@localhost:27017/MongoTestDB?directConnection=true&serverSelectionTimeoutMS=2000&authSource=admin';
+
+const mongoConfig: MongoDbConfigI = {
+  databaseName: 'MongoTestDB',
+  collectionName: 'fork',
+  connectionString: testConnectionString,
+  timeout: 1000,
 };
 
-const mongoConnector = new MongoDBConnector(mockConfig);
-const collectionMap: CollectionMap = mongoConnector.getCollectionsMap();
-const TEST_DB: string = collectionMap['TEST_DB'];
+let mongo: MongoDBConnector;
 
-// note: Database delets if no colletions exist
-afterEach(async () => {
-  await mongoConnector.dropCollection(TEST_DB);
+beforeEach(async () => {
+  mongo = await new MongoDBConnector(mongoConfig);
 });
 
-describe('Mongo Connector Setup', () => {
-  test('getDatabaseName() should return DbName from config', () => {
-    const name = mongoConnector.getDatabaseName();
-    expect(name).toBe('databaseName');
-  });
-  test('getCollectionsMap() should return UPPER:lower map', () => {
-    const map = mongoConnector.getCollectionsMap();
-    expect(map).toEqual({ TEST_DB: 'test_db', TEST_DB2: 'test_db2' });
-  });
+const clearDB = async () => {
+  const client = mongo.getMongoClient();
+  await client.connect();
+  await client.db().dropCollection('fork');
+  await client.close();
+};
+
+afterAll(async () => {
+  const mongoMain = new MongoDBConnector(mongoConfig);
+  const clientMain = mongoMain.getMongoClient();
+  await mongoMain.connect();
+  await clientMain.db().dropDatabase();
+  await mongoMain.close();
 });
 
-describe('CREATE: InsertOne()', () => {
-  test('Should thorw error if no collection is found', async () => {
-    const payload = { name: 'kitten' };
-    expect(async () => {
-      const result = await mongoConnector.insertOneItem('BadName', payload);
-    }).rejects.toThrow();
-    await mongoConnector.close();
-  });
-
-  test('Should insert and return a new item', async () => {
-    const payload = {
-      item: 'Snickers',
-      note: 'satisfied',
+describe('Mongo Config setup', () => {
+  test('Missing connection string throws error', async () => {
+    // @ts-expect-error testing
+    const badConfig: MongoDbConfigI = {
+      databaseName: 'fish',
+      collectionName: 'shark',
     };
-    const result = await mongoConnector.insertOneItem(TEST_DB, payload);
-    expect(result?.item).toBe('Snickers');
-  });
-});
-
-describe('READ: getEntireCollection()', () => {
-  test('Should return null if no items in collection', async () => {
-    const result = await mongoConnector.getEntireCollection(TEST_DB);
-
-    expect(result).toBeDefined();
-    expect(result).toBeNull();
+    expect(async () => {
+      await new MongoDBConnector(badConfig);
+    }).rejects.toThrow('Valid connection string is required for MongoDbConfig');
   });
 
-  test('Return all items in collection', async () => {
-    const payload1 = { item: 'Snickers' };
-    const payload2 = { animal: 'Shark' };
+  test('Missing collection name throws error', async () => {
+    // @ts-expect-error testing
+    const badConfig: MongoDbConfigI = {
+      connectionString: testConnectionString,
+      databaseName: 'fish',
+    };
+    expect(async () => {
+      await new MongoDBConnector(badConfig);
+    }).rejects.toThrow('collectionName is required in MongoDbConfig');
+  });
 
-    await mongoConnector.insertOneItem(TEST_DB, payload1);
-    await mongoConnector.insertOneItem(TEST_DB, payload2);
-    const allResults = await mongoConnector.getEntireCollection(
-      collectionMap['TEST_DB']
+  test('Missing databaseName throws error', async () => {
+    // @ts-expect-error testing
+    const badConfig: MongoDbConfigI = {
+      collectionName: 'shark',
+      connectionString: testConnectionString,
+    };
+
+    expect(async () => await new MongoDBConnector(badConfig)).rejects.toThrow(
+      'databaseName is required in MongoDbConfig'
     );
-    expect(allResults).toBeDefined();
-    expect(allResults?.length).toBe(2);
-    expect(allResults?.[0]).toEqual(
-      expect.objectContaining({ item: 'Snickers' })
-    );
+  });
+
+  test('Connector instance is instantiated', () => {
+    const config: MongoDbConfigI = {
+      databaseName: 'fish',
+      connectionString: testConnectionString,
+      collectionName: 'pancakes',
+    };
+    const mongoTest = new MongoDBConnector(config);
+    expect(mongoTest).toBeInstanceOf(MongoDBConnector);
+  });
+
+  test('Test connection ping', async () => {
+    const res = await mongo.isMongoConnected();
+    expect(res).toBe(true);
   });
 });
 
-describe('READ: getById', () => {
-  test('Should throw error if collection is not found', async () => {
-    expect(async () => {
-      const result = await mongoConnector.getById('Unkown', new ObjectId(123));
-    }).rejects.toThrow();
-    await mongoConnector.close();
-  });
-
-  test('Should return null if no records found', async () => {
-    const result = await mongoConnector.getById(TEST_DB, new ObjectId(123));
-    expect(result).toBeDefined();
-    expect(result).toBeNull();
-  });
-
-  test('Should return the correct record based on ID', async () => {
-    const payload = { name: 'Frank' };
-    const newItem = await mongoConnector.insertOneItem(TEST_DB, payload);
-    const result = await mongoConnector.getById(TEST_DB, newItem?._id);
-    expect(result).toBeDefined();
-    expect(result?.name).toBe('Frank');
+describe('MongoDbConnector Methods', () => {
+  test('getDatabaseName returns correctly', async () => {
+    const mongo = await new MongoDBConnector(mongoConfig);
+    const dbName = mongo.getDatabaseName();
+    expect(dbName).toBe('MongoTestDB');
   });
 });
 
-describe('UPDATE: updateOneItem', () => {
-  const id = new ObjectId(1234);
-  const updatePayload = { job: 'Delivery Guy' };
+describe('CRUD operations', () => {
+  test('Insert one requires userID, throws error', async () => {
+    const payload = {
+      name: 'Kitten Pants',
+    };
 
-  test('Should throw error if collection is not found', async () => {
     expect(async () => {
-      const result = await mongoConnector.updateOneItem(
-        'Unknown',
-        id,
-        updatePayload
-      );
+      // @ts-expect-error testing
+      await mongo.insertOne(payload);
     }).rejects.toThrow();
-    await mongoConnector.close();
   });
 
-  test('Should throw error if ID is not found in collection ', async () => {
+  test('Insert one error if insert 1 back to back called too soon', () => {
+    const payload = { userID: '999', pet: 'kitten' };
+
     expect(async () => {
-      const result = await mongoConnector.updateOneItem(
-        TEST_DB,
-        id,
-        updatePayload
-      );
+      await mongo.insertOne(payload);
+      await mongo.insertOne(payload);
     }).rejects.toThrow();
-    await mongoConnector.close();
   });
 
-  test('Should update and return a record', async () => {
-    const item = { name: 'Fry' };
-    const newItem = await mongoConnector.insertOneItem(TEST_DB, item);
-    const result = await mongoConnector.updateOneItem(
-      TEST_DB,
-      newItem?._id,
+  test('Insert one document', async () => {
+    const payload = {
+      userID: '123',
+      name: 'Frank',
+      job: 'clam guy',
+    };
+    const result = await mongo.insertOne(payload);
+    expect(result).toBeDefined();
+    expect(result).toHaveProperty('insertedId');
+  });
+
+  test('Insert and return document', async () => {
+    const payload = {
+      userID: '123',
+      name: 'Frank',
+      job: 'clam guy',
+    };
+    const resultDocument = await mongo.insertOne(payload, true);
+    expect(resultDocument).toHaveProperty('_id');
+    expect(resultDocument).toMatchObject({
+      userID: '123',
+      name: 'Frank',
+      job: 'clam guy',
+    });
+  });
+
+  test('Find by ID throws error with bad id argument', async () => {
+    expect(async () => {
+      // @ts-expect-error test
+      await mongo.findByID('error');
+    }).rejects.toThrow('MongoError');
+  });
+
+  test('Find by ID', async () => {
+    const payload = {
+      userID: '234',
+      name: 'Other Dude',
+      job: 'fish guy',
+    };
+
+    const newRecord = (await mongo.insertOne(payload)) as InsertOneResult;
+    const id = newRecord?.insertedId;
+    const result = await mongo.findByID(id);
+    expect(result).toBeDefined();
+    expect(result).toMatchObject(payload);
+  });
+
+  test('FindById no results returns null', async () => {
+    const id = new ObjectId('64111111111111111111e50a');
+    const res = await mongo.findByID(id);
+    expect(res).toBeNull();
+  });
+
+  test('Find no results returns empty array', async () => {
+    const res = await mongo.find({ name: 'Nobody' });
+    expect(res?.length).toBe(0);
+    expect(res).toStrictEqual([]);
+  });
+
+  test('Find w/ options', async () => {
+    await clearDB();
+    const newPayload1 = {
+      userID: '555',
+      name: 'Other Dude',
+      pet: 'bird',
+    };
+
+    const newPayload2 = {
+      userID: '555',
+      name: 'Other Dude',
+      pet: 'fish',
+    };
+
+    const findQuery = {
+      name: 'Other Dude',
+    };
+
+    const options: FindOptions = {
+      projection: {
+        _id: 1,
+        name: 1,
+      },
+    };
+
+    await mongo.insertOne(newPayload1, false);
+    await mongo.insertOne(newPayload2, false);
+    const record = await mongo.find(findQuery, options);
+    expect(record?.length).toBe(2);
+
+    if (record?.length) {
+      expect(record[0]._id).toBeDefined();
+      expect(record[0]).toHaveProperty('name');
+    }
+  });
+
+  test('Update Error', async () => {
+    expect(async () => {
+      // @ts-expect-error test
+      await mongo.updateOne('1', true);
+    }).rejects.toThrow('UPDATE ERROR');
+  });
+
+  test('Update Document', async () => {
+    const person: NewItemPayload = {
+      userID: '333',
+      pet: 'kitten',
+    };
+
+    const updatePayload = {
+      pet: 'shark',
+      car: 'lemon',
+    };
+
+    const result = (await mongo.insertOne(person)) as InsertOneResult;
+    const id = result?.insertedId;
+    const updatedRecord = await mongo.updateOne(id, updatePayload);
+    expect(updatedRecord).toMatchObject({
+      pet: 'shark',
+      car: 'lemon',
+    });
+  });
+
+  test('Update document: obj not found returns null', async () => {
+    const person: NewItemPayload = {
+      userID: '333',
+      pet: 'kitten',
+    };
+
+    const updatePayload = {
+      pet: 'shark',
+      car: 'lemon',
+    };
+    await mongo.insertOne(person);
+    const result = await mongo.updateOne(
+      new ObjectId('111111111111'),
       updatePayload
     );
-    expect(result).toBeDefined();
-    expect(result).toMatchObject({ name: 'Fry', job: 'Delivery Guy' });
-  });
-});
-
-describe('DELETE: deleteOneItem()', () => {
-  test('Should throw error if no collection found', async () => {
-    expect(async () => {
-      const deleteResult = await mongoConnector.deleteOneItem(
-        'UnknownDB',
-        new ObjectId(123)
-      );
-    }).rejects.toThrow();
-    await mongoConnector.close();
+    expect(result).toBeNull();
   });
 
-  test('Should throw error if Item is not found', async () => {
-    expect(async () => {
-      const deleted = await mongoConnector.deleteOneItem(
-        TEST_DB,
-        new ObjectId(555)
-      );
-    }).rejects.toThrow();
-    await mongoConnector.close();
-  });
+  test('Update document not found', async () => {
+    const person: NewItemPayload = {
+      userID: '2222',
+      pet: 'kitten',
+    };
 
-  test('Should delete one item', async () => {
-    const item = { name: 'Frank' };
-    const result = await mongoConnector.insertOneItem(TEST_DB, item);
-    const id = result?._id;
-    expect(result).toMatchObject({ name: 'Frank' });
-    const deleteResult = await mongoConnector.deleteOneItem(
-      TEST_DB,
-      result?._id
+    const updatePayload = {
+      pet: 'shark',
+      car: 'lemon',
+    };
+    const result = await mongo.insertOne(person, true);
+    expect(result).toMatchObject(person);
+    const res = await mongo.updateOne(
+      new ObjectId('64111111111111111111e50a'),
+      updatePayload
     );
-    expect(deleteResult).toMatchObject({ acknowledged: true, deletedCount: 1 });
-    expect(async () => {
-      const foundItem = await mongoConnector.getById(TEST_DB, id);
-    }).rejects.toThrow();
-    await mongoConnector.close();
+    expect(res).toBeNull();
+  });
+
+  test('Delete Document', async () => {
+    const person: NewItemPayload = {
+      userID: '333',
+      pet: 'kitten',
+    };
+    const result = (await mongo.insertOne(person)) as InsertOneResult;
+    const id = result?.insertedId;
+    const deleteResp = await mongo.deleteOneItem(id);
+    expect(deleteResp).toBeDefined();
+    expect(deleteResp?.deletedCount).toBe(1);
+    expect(deleteResp?.acknowledged).toBeTruthy();
+  });
+
+  test('Delete document not found', async () => {
+    const result = await mongo.deleteOneItem(
+      new ObjectId('64111111111111111111e50a')
+    );
+    expect(result).toMatchObject({
+      acknowledged: true,
+      deletedCount: 0,
+    } as DeleteResult);
+  });
+
+  test('Custom Mongo Connection', async () => {
+    const clientTest = mongo.getMongoClient();
+    expect(clientTest).toBeInstanceOf(MongoClient);
   });
 });

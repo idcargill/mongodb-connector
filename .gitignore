@@ -1,5 +1,5 @@
 /node_modules/
 /coverage
 /build
-/dist
-garbage.ts
+.env*
+*.tgz

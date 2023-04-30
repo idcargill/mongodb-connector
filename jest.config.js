@@ -2,10 +2,14 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
+  testEnvironmentOptions: {},
   testPathIgnorePatterns: [
     '/node_modules/',
-    '<rootDir>/dist/',
+    '<rootDir>/build/',
     '<rootDir>/node_modules/',
   ],
-  testRegex: '__tests__/.+[.]test[.](ts|tsx|js)$',
+  transform: {},
+  transformIgnorePatterns: ['/node_modules/'],
+  testRegex: '(/src/)?__tests__/.+[.]test[.](ts|tsx|js)$',
+  moduleFileExtensions: ['js', 'ts', 'tsx'],
 };

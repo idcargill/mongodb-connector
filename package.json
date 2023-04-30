@@ -1,30 +1,34 @@
 {
   "name": "@idcargill/mongodb-connector",
-  "version": "1.0.0",
-  "description": "A simple wrapper for Mongo-Nodejs driver. CRUD opperations are standardized for databases with multiple collections. ",
-  "main": "dist/index.ts",
-  "types": "dist/index.d.ts",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/idcargill/mongodb-connector.git"
-  },
+  "version": "2.0.0",
+  "description": "",
+  "main": "build/index.js",
+  "types": "build/index.d.ts",
+  "keywords": [
+    "mongodb, mongodb-connector, database-connector"
+  ],
   "author": "Ian Cargill",
+  "homepage": "https://www.npmjs.com/package/@idcargill/mongodb-connector",
+  "repository": {
+    "url": "https://github.com/idcargill/mongodb-connector.git",
+    "type": "git"
+  },
   "license": "ISC",
   "files": [
-    "dist/index.js",
-    "dist/index.d.ts",
-    "dist/index.js.map",
-    "dist/Connector/*",
-    "license",
-    "README.md"
+    "build"
   ],
   "scripts": {
-    "setup": "docker compose up",
-    "build": "tsc",
-    "go": "node dist/Example/example.js",
-    "example": "npm run build && npm run go",
+    "====== DEV ======": ".",
+    "start:db": "docker compose up -d",
+    "stop:db": "docker compose down",
+    "dev": "yarn db",
+    "play": "ts-node ./src/playground.ts",
+    "====== Build ======": ".",
+    "build": "rm -rf build && tsc",
+    "build:package": "rm -r build && tsc && rm idcargill-mongodb-connector-v2.0.0.tgz && yarn pack",
+    "====== TESTING ======": ".",
     "test": "jest --coverage",
-    "stop": "docker compose down --volumes"
+    "test-file": "jest --watch"
   },
   "dependencies": {
     "mongodb": "^4.11.0"
@@ -37,23 +41,18 @@
     "@types/jest": "^29.2.3",
     "@types/mongodb": "^4.0.7",
     "@types/node": "^18.11.9",
-    "babel": "^6.23.0",
+    "@typescript-eslint/eslint-plugin": "^5.56.0",
+    "@typescript-eslint/parser": "^5.56.0",
     "babel-jest": "^29.3.1",
+    "eslint": "^8.36.0",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-plugin-prettier": "^4.2.1",
     "jest": "^29.3.1",
     "jest-environment-node": "^29.3.1",
-    "jest-runner-tsc": "^1.6.0",
+    "nodemon": "^2.0.20",
+    "prettier": "^2.8.7",
     "ts-jest": "^29.0.3",
     "ts-node": "^10.9.1",
     "typescript": "^4.8.4"
-  },
-  "bugs": {
-    "url": "https://github.com/idcargill/mongodb-connector/issues"
-  },
-  "homepage": "https://github.com/idcargill/mongodb-connector#readme",
-  "keywords": [
-    "[mongodb",
-    "mongodb-connector",
-    "database",
-    "connector]"
-  ]
+  }
 }

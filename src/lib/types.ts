@@ -10,7 +10,7 @@ import {
   Filter,
 } from 'mongodb';
 
-export type Payload = Record<string, string | number>;
+export type Payload = Record<string, any>;
 
 export type NewItemPayload = Payload & { userID: string };
 

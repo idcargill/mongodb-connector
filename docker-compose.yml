@@ -4,7 +4,6 @@ services:
   mongoConnector:
     image: node
 
-    
   mongo:
     image: mongo
     container_name: mongo-connector
@@ -18,12 +17,10 @@ services:
       - mongodbdata:/data/db
 
     ports:
-      - 27017:27017
+      - 4040:27017
     expose:
       - 27017
 
 volumes:
   mongodbdata:
     driver: local
-
-  

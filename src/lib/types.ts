@@ -1,22 +1,16 @@
 import {
-  InsertOneResult,
   WithId,
   Document,
   ConnectOptions,
   ObjectId,
   FindOptions,
   DeleteResult,
-  MongoClient,
   Filter,
 } from 'mongodb';
 
-export type Payload = Record<string, any>;
+export type NewItemPayload = Document & { userID: string };
 
-export type NewItemPayload = Payload & { userID: string };
-
-export type InsertOneResponseType =
-  | WithId<Document>
-  | InsertOneResult<WithId<Document>>;
+export type DatabaseDocument = WithId<NewItemPayload>;
 
 export interface MongoDbConfigI {
   connectionString: string;
@@ -28,21 +22,22 @@ export interface MongoDbConfigI {
 
 export interface MongoDbConnectorI {
   isMongoConnected: () => Promise<boolean>;
-  getMongoClient: () => MongoClient;
   getDatabaseName: () => string;
   getCollectionName: () => string;
-  insertOne: <T>(
-    payload: NewItemPayload,
+  insertOne: <T, R = DatabaseDocument & T>(
+    payload: NewItemPayload & T,
     returnDocument?: boolean
-  ) => Promise<InsertOneResponseType | T>;
-  findByID: (id: ObjectId) => Promise<WithId<Document> | null>;
-  find: (
+  ) => Promise<R>;
+  findByID: <DatabaseDocument>(
+    id: ObjectId
+  ) => Promise<DatabaseDocument | null>;
+  find: <T>(
     query: Filter<Document>,
     options?: FindOptions
-  ) => Promise<WithId<Document>[]>;
-  updateOne: (
+  ) => Promise<WithId<Document | T>[]>;
+  updateOne: <DatabaseDocument>(
     id: ObjectId,
-    payload: Payload
-  ) => Promise<WithId<Document> | null>;
+    payload: Document
+  ) => Promise<DatabaseDocument | null>;
   deleteOneItem: (id: ObjectId) => Promise<DeleteResult>;
 }

@@ -2,9 +2,11 @@
 
 [NPM](https://www.npmjs.com/package/@idcargill/mongodb-connector)
 
-A simple MongoDB wrapper for CRUD operations.
+A simple MongoDB wrapper async for CRUD operations.
 
-Methods are wrapped async and wrapped in try/catch blocks to simplify repeated connections. Each instance connects to a single collection.
+Methods are wrapped async to simplify repeated connections. Each instance connects to a single collection.
+
+Methods take generics for insert and returned types.
 
 ## Config
 
@@ -22,19 +24,25 @@ const config: MongoDbConfigI = {
 const mongo = new MongoDbConnector(config);
 ```
 
+## DatabaseDocuments
+
+New documents are modified to have a userID and \_id property to match the DocumentDatabase interface. A userID is required for all new documents. If not needed, this could be a system ID or the same across documents.
+
+THe DatabaseDocument modifies the original type by appending a Mongo generated [_id], and a user supplied [userID]
+
 ## Methods
 
 - isMongoConnected() => boolean
 
-- insertOne(payload) => InsertOneResult { acknowledged, insertedId }
+- insertOne<MyDocument>(payload) => DatabaseDocument
 
-- insertOne(payload, true) => Inserted document with \_id
+- insertOne<MyDocument>(payload, true) => DatabaseDocument
 
-- findById(ObjectID) => Document
+- findById<DatabaseDocument>(ObjectID) => DatabaseDocument
 
-- find(query, FindOptions) => Passthrough for Mongodb find operations
+- find<MyDocument>(query, FindOptions) => Passthrough for Mongodb find operations
 
-- updateOne(mongoID, payload) => updated Document
+- updateOne<DatabaseDocument>(mongoID, payload) => DatabaseDocument
 
 - deleteOneItem(objectId) => DeleteResult
 
@@ -67,6 +75,15 @@ const updatedDocSame = await mongo.find({ _id: doc1._id }, { projection: { job: 
 const deleteResponse = await mongo.deleteOneItem(doc1._id);
 // Deleted response: { acknowledged: true, deletedCount: 1 }
 
+
+// Access Mongodb directly
+const catDB = new MongoDBConnector(config);
+await catDB.connect();
+await catDB.db.deleteMany({ name: 'Kitten 1' });
+await catDB.db.deleteMany({ name: 'Kitten 2' });
+await catDB.close();
+
+
 ```
 
 ### Development
@@ -77,7 +94,7 @@ To start up docker container:
 
 ### Example output
 
-To experiment, feel free to modify src/playground.ts and run:
+To experiment, modify src/playground.ts and run:
 
 > yarn play
 
@@ -100,3 +117,11 @@ Run single file tests:
 ### Stop Docker
 
 > yarn stop:db
+
+### Bundling
+
+> yarn build
+
+Build tgz file
+
+> yarn pack

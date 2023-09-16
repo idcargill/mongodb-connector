@@ -11,18 +11,16 @@ import {
 
 import type {
   NewItemPayload,
-  InsertOneResponseType,
   MongoDbConfigI,
   MongoDbConnectorI,
-  Payload,
 } from './types';
 
 class MongoDBConnector implements MongoDbConnectorI {
   public databaseName: string;
+  public db: Collection<Document>;
   private connectionString: string;
   private collectionName: string;
   private client: MongoClient;
-  private db: Collection<Document>;
 
   constructor(config: MongoDbConfigI) {
     if (!config?.connectionString) {
@@ -56,36 +54,43 @@ class MongoDBConnector implements MongoDbConnectorI {
 
   public getCollectionName = () => this.collectionName;
 
-  public getMongoClient = () => this.client;
-
-  public async insertOne<T>(
-    payload: NewItemPayload,
+  /**
+   *
+   * @param payload  ID is required
+   * @param returnDocument boolean Fetches document after insertion
+   * @returns DatabaseDocument & T
+   */
+  public async insertOne<T, R = NewItemPayload & WithId<T>>(
+    payload: NewItemPayload & T,
     returnDocument = false
-  ): Promise<InsertOneResponseType | T> {
+  ): Promise<R> {
     try {
       await this.connect();
       if (!payload?.userID) {
-        throw new Error('userID is required for new records');
+        throw new Error('INSERT ONE ERROR: userID is required for new records');
       }
 
       const res = await this.db.insertOne(payload);
-      if (returnDocument && res) {
-        if (res?.acknowledged && res?.insertedId) {
-          const insertedItem = await this.db.findOne({
-            _id: new ObjectId(res.insertedId),
-          });
-          if (insertedItem) {
-            return insertedItem as T;
+      if (res.acknowledged) {
+        if (returnDocument) {
+          if (res?.insertedId) {
+            const insertedItem = await this.db.findOne<T>({
+              _id: new ObjectId(res.insertedId),
+            });
+            if (insertedItem) {
+              return insertedItem as R;
+            }
           }
         }
+        const newItemId = res.insertedId;
+        return {
+          ...payload,
+          _id: newItemId,
+        } as R;
       }
-      return res as T;
+      return res as R;
     } catch (e: any) {
-      if (e.message === 'userID is required for new records') {
-        throw e;
-      } else {
-        throw e;
-      }
+      throw new Error(`INSERT ONE ERROR: ${e}`);
     } finally {
       await this.close();
     }
@@ -94,35 +99,41 @@ class MongoDBConnector implements MongoDbConnectorI {
   // /**
   //  * Find by MongoID
   //  * @param  mongoDB ID
-  //  * @returns Document
+  //  * @returns Document | Generic
   //  */
-  public async findByID(id: ObjectId) {
+  public async findByID<T>(id: ObjectId) {
     try {
       await this.connect();
       const response = await this.db.findOne({ _id: new ObjectId(id) });
       if (response?._id) {
-        return response;
+        return response as T;
       }
     } catch (e: any) {
-      throw new Error(`MongoError: ${e.message}`);
+      throw new Error(`FIND BY ID ERROR: ${e.message}`);
     } finally {
       await this.close();
     }
     return null;
   }
 
-  // /**
-  //  * Passthrough for mongo find operations
-  //  * @param query mongodb document query object
-  //  * @param options mongodb FindOptions
-  //  * @returns Document
-  //  */
-  public async find(query: Filter<Document>, options?: FindOptions) {
+  /**
+   * Passthrough for mongo find operations
+   * @param query mongodb document query object
+   * @param options mongodb FindOptions
+   * @returns Document: Generic
+   */
+  public async find<T>(
+    query: Filter<Document>,
+    options?: FindOptions
+  ): Promise<T> {
     const opt = options || {};
 
     try {
       await this.connect();
-      return await this.db.find(query, opt).toArray();
+      const result = await this.db.find(query, opt).toArray();
+      return result as T;
+    } catch (e: any) {
+      throw new Error(`FIND ERROR: ${e}`);
     } finally {
       await this.close();
     }
@@ -133,21 +144,22 @@ class MongoDBConnector implements MongoDbConnectorI {
    * @param collection collection name
    * @param id ObjectId
    * @param payload object with userID
-   * @returns Updated Document
+   * @returns Updated Document Generic
    */
-  public async updateOne(
+  public async updateOne<DatabaseDocument>(
     id: ObjectId,
-    payload: Payload
-  ): Promise<WithId<Document> | null> {
+    payload: Document
+  ): Promise<DatabaseDocument | null> {
+    let response: Document;
     try {
       await this.connect();
-      const response = await this.db.findOneAndUpdate(
+      response = await this.db.findOneAndUpdate(
         { _id: new ObjectId(id) },
         { $set: payload },
         { returnDocument: 'after' }
       );
       if (response.ok === 1) {
-        return response.value;
+        return response.value as DatabaseDocument;
       }
     } catch (e: any) {
       if (e) {

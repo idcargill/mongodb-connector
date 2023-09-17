@@ -1,6 +1,6 @@
 {
   "name": "@idcargill/mongodb-connector",
-  "version": "2.0.6",
+  "version": "2.0.7",
   "description": "",
   "main": "build/index.js",
   "types": "build/index.d.ts",
@@ -31,6 +31,7 @@
     "test-file": "jest --watch"
   },
   "dependencies": {
+    "@idcargill/mongodb-connector": "^2.0.6",
     "mongodb": "^5.6.0"
   },
   "devDependencies": {

@@ -4,7 +4,6 @@ import {
   Document,
   FindOptions,
   DeleteResult,
-  WithId,
   Filter,
   Collection,
 } from 'mongodb';
@@ -13,6 +12,7 @@ import type {
   NewItemPayload,
   MongoDbConfigI,
   MongoDbConnectorI,
+  DatabaseDocument,
 } from './types';
 
 class MongoDBConnector implements MongoDbConnectorI {
@@ -56,14 +56,14 @@ class MongoDBConnector implements MongoDbConnectorI {
 
   /**
    *
-   * @param payload  ID is required
-   * @param returnDocument boolean Fetches document after insertion
-   * @returns DatabaseDocument & T
+   * @param payload  userID is required in a new item: can be a system ID: string
+   * @param returnDocument inserted document by default = true
+   * @returns DatabaseDocument Generic | null
    */
-  public async insertOne<T, R = NewItemPayload & WithId<T>>(
+  public async insertOne<T, R = DatabaseDocument<T>>(
     payload: NewItemPayload & T,
-    returnDocument = false
-  ): Promise<R> {
+    returnDocument = true
+  ): Promise<R | null> {
     try {
       await this.connect();
       if (!payload?.userID) {
@@ -82,13 +82,9 @@ class MongoDBConnector implements MongoDbConnectorI {
             }
           }
         }
-        const newItemId = res.insertedId;
-        return {
-          ...payload,
-          _id: newItemId,
-        } as R;
+        return null;
       }
-      return res as R;
+      return null;
     } catch (e: any) {
       throw new Error(`INSERT ONE ERROR: ${e}`);
     } finally {
@@ -98,17 +94,18 @@ class MongoDBConnector implements MongoDbConnectorI {
 
   // /**
   //  * Find by MongoID
-  //  * @param  mongoDB ID
-  //  * @returns Document | Generic
+  //  * @param  mongoDB _id
+  //  * @returns Document Generic | null
   //  */
-  public async findByID<T>(id: ObjectId) {
+  public async findByID<T, R = DatabaseDocument<T>>(id: ObjectId) {
     try {
       await this.connect();
       const response = await this.db.findOne({ _id: new ObjectId(id) });
       if (response?._id) {
-        return response as T;
+        return response as R;
       }
     } catch (e: any) {
+      await this.close();
       throw new Error(`FIND BY ID ERROR: ${e.message}`);
     } finally {
       await this.close();
@@ -118,20 +115,20 @@ class MongoDBConnector implements MongoDbConnectorI {
 
   /**
    * Passthrough for mongo find operations
-   * @param query mongodb document query object
+   * @param query Document obj
    * @param options mongodb FindOptions
-   * @returns Document: Generic
+   * @returns Document: Generic[] | []
    */
-  public async find<T>(
+  public async find<T, R = DatabaseDocument<T>>(
     query: Filter<Document>,
     options?: FindOptions
-  ): Promise<T> {
+  ): Promise<R[] | []> {
     const opt = options || {};
 
     try {
       await this.connect();
       const result = await this.db.find(query, opt).toArray();
-      return result as T;
+      return result as R[];
     } catch (e: any) {
       throw new Error(`FIND ERROR: ${e}`);
     } finally {
@@ -144,12 +141,12 @@ class MongoDBConnector implements MongoDbConnectorI {
    * @param collection collection name
    * @param id ObjectId
    * @param payload object with userID
-   * @returns Updated Document Generic
+   * @returns Updated Document Generic | null
    */
-  public async updateOne<DatabaseDocument>(
+  public async updateOne<T, U = DatabaseDocument<T>>(
     id: ObjectId,
     payload: Document
-  ): Promise<DatabaseDocument | null> {
+  ): Promise<U | null> {
     let response: Document;
     try {
       await this.connect();
@@ -159,7 +156,7 @@ class MongoDBConnector implements MongoDbConnectorI {
         { returnDocument: 'after' }
       );
       if (response.ok === 1) {
-        return response.value as DatabaseDocument;
+        return response.value as U;
       }
     } catch (e: any) {
       if (e) {

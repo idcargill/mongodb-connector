@@ -2,11 +2,15 @@
 
 [NPM](https://www.npmjs.com/package/@idcargill/mongodb-connector)
 
-A simple MongoDB wrapper async for CRUD operations.
+A simple MongoDB wrapper for CRUD operations.
 
 Methods are wrapped async to simplify repeated connections. Each instance connects to a single collection.
 
-Methods take generics for insert and returned types.
+Methods can accept types as generics.
+All documents returned will:
+
+- \_id: ObjectId
+- userID: string
 
 ## Config
 
@@ -26,7 +30,7 @@ const mongo = new MongoDbConnector(config);
 
 ## DatabaseDocuments
 
-New documents are modified to have a userID and \_id property to match the DocumentDatabase interface. A userID is required for all new documents. If not needed, this could be a system ID or the same across documents.
+New documents are modified to have a userID and \_id property to match the DocumentDatabase interface. A userID is required for all new documents. If not needed, this could be a system ID or the same across all documents in a collection.
 
 THe DatabaseDocument modifies the original type by appending a Mongo generated [_id], and a user supplied [userID]
 
@@ -34,15 +38,15 @@ THe DatabaseDocument modifies the original type by appending a Mongo generated [
 
 - isMongoConnected() => boolean
 
-- insertOne<MyDocument>(payload) => DatabaseDocument
+- insertOne<MyDocument>(payload) => DatabaseDocument | null
 
-- insertOne<MyDocument>(payload, true) => DatabaseDocument
+- insertOne<MyDocument>(payload, true) => DatabaseDocument | null
 
-- findById<DatabaseDocument>(ObjectID) => DatabaseDocument
+- findById<DatabaseDocument>(ObjectID) => DatabaseDocument | null
 
-- find<MyDocument>(query, FindOptions) => Passthrough for Mongodb find operations
+- find<MyDocument>(query, FindOptions) => DatabaseDocument[] | []
 
-- updateOne<DatabaseDocument>(mongoID, payload) => DatabaseDocument
+- updateOne<DatabaseDocument>(mongoID, payload) => DatabaseDocument | null
 
 - deleteOneItem(objectId) => DeleteResult
 
@@ -57,24 +61,8 @@ const newItem: NewItemPayload = {
 };
 
 // Return new document with _id
-const doc1 = await mongo.insertOne(newItem, true) as WithId<Document>;
-// doc1 is a Document
-
-const doc2 = await mongo.insertOne(newItem) as InsertOneResult;
-// doc2 === { acknowledged: true, insertedId: new ObjectId('##########')}
-
-const updatedDoc = await mongo.updateOne(doc1._id, { job: 'pizza delivery guy' });
-// Document
-
-const updatedDocSame = await mongo.findByID(dock1_id);
-// Document
-
-const updatedDocSame = await mongo.find({ _id: doc1._id }, { projection: { job: 1 }});
-// Document
-
-const deleteResponse = await mongo.deleteOneItem(doc1._id);
-// Deleted response: { acknowledged: true, deletedCount: 1 }
-
+const doc1 = (await mongo.insertOne) < T > newItem;
+// doc1 is a DatabaseDocument<T> with userID and _id
 
 // Access Mongodb directly
 const catDB = new MongoDBConnector(config);
@@ -82,8 +70,6 @@ await catDB.connect();
 await catDB.db.deleteMany({ name: 'Kitten 1' });
 await catDB.db.deleteMany({ name: 'Kitten 2' });
 await catDB.close();
-
-
 ```
 
 ### Development
@@ -100,7 +86,7 @@ To experiment, modify src/playground.ts and run:
 
 ### Testing
 
-Test are run against a docker or local mongo instance.
+Test are run against a docker mongo image.
 
 Start the docker container:
 
@@ -118,10 +104,6 @@ Run single file tests:
 
 > yarn stop:db
 
-### Bundling
-
-> yarn build
-
-Build tgz file
+### Deploy changes to NPM
 
 > yarn pack

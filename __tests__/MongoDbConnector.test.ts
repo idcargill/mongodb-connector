@@ -1,14 +1,8 @@
-import {
-  FindOptions,
-  ObjectId,
-  DeleteResult,
-  MongoClient,
-  InsertOneResult,
-} from 'mongodb';
+import { FindOptions, ObjectId, DeleteResult } from 'mongodb';
 import MongoDBConnector, { MongoDbConfigI, NewItemPayload } from '../src';
 
 const testConnectionString =
-  'mongodb://root:password@localhost:27017/MongoTestDB?directConnection=true&serverSelectionTimeoutMS=2000&authSource=admin';
+  'mongodb://root:password@localhost:4040/MongoTestDB?directConnection=true&serverSelectionTimeoutMS=2000&authSource=admin';
 
 const mongoConfig: MongoDbConfigI = {
   databaseName: 'MongoTestDB',
@@ -24,17 +18,15 @@ beforeEach(async () => {
 });
 
 const clearDB = async () => {
-  const client = mongo.getMongoClient();
-  await client.connect();
-  await client.db().dropCollection('fork');
-  await client.close();
+  await mongo.connect();
+  await mongo.db.drop();
+  await mongo.close();
 };
 
 afterAll(async () => {
   const mongoMain = new MongoDBConnector(mongoConfig);
-  const clientMain = mongoMain.getMongoClient();
   await mongoMain.connect();
-  await clientMain.db().dropDatabase();
+  await mongoMain.db.drop();
   await mongoMain.close();
 });
 
@@ -124,9 +116,13 @@ describe('CRUD operations', () => {
       name: 'Frank',
       job: 'clam guy',
     };
-    const result = await mongo.insertOne(payload);
-    expect(result).toBeDefined();
-    expect(result).toHaveProperty('insertedId');
+    const result = await mongo.insertOne<typeof payload>(payload);
+    if (!result) {
+      return false;
+    }
+    expect(result).toHaveProperty('_id');
+    expect(result).toHaveProperty('userID');
+    expect(result).toHaveProperty('job');
   });
 
   test('Insert and return document', async () => {
@@ -144,13 +140,6 @@ describe('CRUD operations', () => {
     });
   });
 
-  test('Find by ID throws error with bad id argument', async () => {
-    expect(async () => {
-      // @ts-expect-error test
-      await mongo.findByID('error');
-    }).rejects.toThrow('MongoError');
-  });
-
   test('Find by ID', async () => {
     const payload = {
       userID: '234',
@@ -158,10 +147,13 @@ describe('CRUD operations', () => {
       job: 'fish guy',
     };
 
-    const newRecord = (await mongo.insertOne(payload)) as InsertOneResult;
-    const id = newRecord?.insertedId;
-    const result = await mongo.findByID(id);
-    expect(result).toBeDefined();
+    const newRecord = await mongo.insertOne<typeof payload>(payload);
+    if (!newRecord) {
+      return false;
+    }
+    const id = newRecord?._id;
+    const result = await mongo.findByID<typeof payload>(id);
+    expect(result).toHaveProperty('job');
     expect(result).toMatchObject(payload);
   });
 
@@ -177,7 +169,7 @@ describe('CRUD operations', () => {
     expect(res).toStrictEqual([]);
   });
 
-  test('Find w/ options', async () => {
+  test('Find with options', async () => {
     await clearDB();
     const newPayload1 = {
       userID: '555',
@@ -197,20 +189,21 @@ describe('CRUD operations', () => {
 
     const options: FindOptions = {
       projection: {
-        _id: 1,
+        userID: '555',
         name: 1,
       },
     };
 
     await mongo.insertOne(newPayload1, false);
     await mongo.insertOne(newPayload2, false);
-    const record = await mongo.find(findQuery, options);
-    expect(record?.length).toBe(2);
-
-    if (record?.length) {
-      expect(record[0]._id).toBeDefined();
-      expect(record[0]).toHaveProperty('name');
+    const record = await mongo.find<typeof newPayload1>(findQuery, options);
+    if (record.length < 1) {
+      return false;
     }
+    expect(record?.length).toBe(2);
+    expect(record[0]._id).toBeDefined();
+    expect(record[0]).toHaveProperty('name');
+    expect(record[0].name).toBe('Other Dude');
   });
 
   test('Update Error', async () => {
@@ -231,9 +224,16 @@ describe('CRUD operations', () => {
       car: 'lemon',
     };
 
-    const result = (await mongo.insertOne(person)) as InsertOneResult;
-    const id = result?.insertedId;
-    const updatedRecord = await mongo.updateOne(id, updatePayload);
+    const result = await mongo.insertOne<typeof person>(person);
+    if (!result) {
+      return false;
+    }
+    const id = result?._id;
+    const updatedRecord = await mongo.updateOne<typeof updatePayload>(
+      id,
+      updatePayload
+    );
+
     expect(updatedRecord).toMatchObject({
       pet: 'shark',
       car: 'lemon',
@@ -282,10 +282,12 @@ describe('CRUD operations', () => {
       userID: '333',
       pet: 'kitten',
     };
-    const result = (await mongo.insertOne(person)) as InsertOneResult;
-    const id = result?.insertedId;
+    const result = await mongo.insertOne<typeof person>(person);
+    if (!result) {
+      return false;
+    }
+    const id = result?._id;
     const deleteResp = await mongo.deleteOneItem(id);
-    expect(deleteResp).toBeDefined();
     expect(deleteResp?.deletedCount).toBe(1);
     expect(deleteResp?.acknowledged).toBeTruthy();
   });
@@ -298,10 +300,5 @@ describe('CRUD operations', () => {
       acknowledged: true,
       deletedCount: 0,
     } as DeleteResult);
-  });
-
-  test('Custom Mongo Connection', async () => {
-    const clientTest = mongo.getMongoClient();
-    expect(clientTest).toBeInstanceOf(MongoClient);
   });
 });

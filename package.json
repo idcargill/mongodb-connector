@@ -1,6 +1,6 @@
 {
   "name": "@idcargill/mongodb-connector",
-  "version": "2.0.5",
+  "version": "2.0.4",
   "description": "",
   "main": "build/index.js",
   "types": "build/index.d.ts",

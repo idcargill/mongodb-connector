@@ -1,7 +1,5 @@
 import MongoDBConnector from './index';
-import { MongoDbConfigI, NewItemPayload } from './lib/types';
-
-import { ObjectId } from 'mongodb';
+import { MongoDbConfigI } from './lib/types';
 
 const config: MongoDbConfigI = {
   databaseName: 'petsTest',
@@ -10,15 +8,10 @@ const config: MongoDbConfigI = {
     'mongodb://root:password@localhost:4040/MongoTestDB?directConnection=true&serverSelectionTimeoutMS=2000&authSource=admin',
 };
 
-type Animal = {
-  name: string;
-};
-
-type ReturnedAnimal = Animal & NewItemPayload & { _id: ObjectId };
-
 const kitten1 = {
   userID: '123',
   name: 'Kitten 1',
+  food: 'kibble',
 };
 
 const kitten2 = {
@@ -29,36 +22,48 @@ const kitten2 = {
 const catDB = new MongoDBConnector(config);
 
 (async function main() {
+  // Check connection
   const connectedCheck = await catDB.isMongoConnected();
   console.log('Database is Connected: ', connectedCheck);
 
-  const cat1 = await catDB.insertOne<Animal>(kitten1);
-  console.log('Inserted document 1: ', cat1._id);
+  // Insert one returns the document with _id or NULL if no response
+  const cat1 = await catDB.insertOne(kitten1);
+  if (!cat1) {
+    throw new Error('Error inserting document');
+  }
+  console.log('Inserted document 1: ', cat1?._id);
 
-  const cat2 = await catDB.insertOne<Animal, ReturnedAnimal>(kitten2);
+  const cat2 = await catDB.insertOne<typeof kitten2>(kitten2);
+  if (!cat2) {
+    throw new Error('Error inserting document Kitten2');
+  }
   console.log('Inserted document 2: ', cat2._id);
 
+  // Update a document by ID
   const cat1Updated = await catDB.updateOne<typeof cat1>(cat1._id, {
     job: 'hunting',
   });
   console.log('Updated document 1: ', cat1Updated?.name);
 
+  // Find Document by ID
   const cat1UpdatedResult = await catDB.findByID<typeof cat1>(cat1._id);
   console.log('Find by ID: ', cat1UpdatedResult);
 
-  const allCatNames = await catDB.find<ReturnedAnimal[]>(
+  // Find entire collection
+  const allCatNames = await catDB.find<typeof kitten1>(
     { userID: '123' },
     { projection: { name: 1 } }
   );
   console.log('Find all Documents : ', allCatNames);
 
+  // Delete individual item
   const res = await catDB.deleteOneItem(cat1._id);
   console.log('Deleted response: ', res);
 
   const check = await catDB.deleteOneItem(cat1._id);
   console.log('Delete not found: ', check);
 
-  // Access Mongodb directly
+  // Access Mongodb Driver directly for custom queries
   await catDB.connect();
   await catDB.db.deleteMany({ name: 'Kitten 1' });
   await catDB.db.deleteMany({ name: 'Kitten 2' });

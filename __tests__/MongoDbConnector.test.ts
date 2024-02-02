@@ -96,7 +96,6 @@ describe('CRUD operations', () => {
     };
 
     expect(async () => {
-      // @ts-expect-error testing
       await mongo.insertOne(payload);
     }).rejects.toThrow();
   });
@@ -131,7 +130,7 @@ describe('CRUD operations', () => {
       name: 'Frank',
       job: 'clam guy',
     };
-    const resultDocument = await mongo.insertOne(payload, true);
+    const resultDocument = await mongo.insertOne(payload);
     expect(resultDocument).toHaveProperty('_id');
     expect(resultDocument).toMatchObject({
       userID: '123',
@@ -194,8 +193,8 @@ describe('CRUD operations', () => {
       },
     };
 
-    await mongo.insertOne(newPayload1, false);
-    await mongo.insertOne(newPayload2, false);
+    await mongo.insertOne(newPayload1);
+    await mongo.insertOne(newPayload2);
     const record = await mongo.find<typeof newPayload1>(findQuery, options);
     if (record.length < 1) {
       return false;
@@ -268,7 +267,7 @@ describe('CRUD operations', () => {
       pet: 'shark',
       car: 'lemon',
     };
-    const result = await mongo.insertOne(person, true);
+    const result = await mongo.insertOne(person);
     expect(result).toMatchObject(person);
     const res = await mongo.updateOne(
       new ObjectId('64111111111111111111e50a'),

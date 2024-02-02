@@ -106,4 +106,12 @@ Run single file tests:
 
 ### Deploy changes to NPM
 
+- merge in changes to main branch
+- update local main
+
 > yarn pack
+
+> yarn publish
+
+- enter new version number
+- enter authentication

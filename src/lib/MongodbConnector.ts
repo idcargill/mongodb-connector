@@ -15,6 +15,8 @@ import type {
   DatabaseDocument,
 } from './types';
 
+const SERVICE_NAME = '[MongoDB Connector]';
+
 class MongoDBConnector implements MongoDbConnectorI {
   public databaseName: string;
   public db: Collection<Document>;
@@ -56,37 +58,22 @@ class MongoDBConnector implements MongoDbConnectorI {
 
   /**
    *
-   * @param payload  userID is required in a new item: can be a system ID: string
-   * @param returnDocument inserted document by default = true
-   * @returns DatabaseDocument Generic | null
+   * @param payload is a Document Object
+   * @returns DatabaseDocument of <T> | null
    */
-  public async insertOne<T, R = DatabaseDocument<T>>(
-    payload: NewItemPayload & T,
-    returnDocument = true
-  ): Promise<R | null> {
+  public async insertOne<T>(
+    payload: NewItemPayload
+  ): Promise<DatabaseDocument<T> | null> {
     try {
       await this.connect();
-      if (!payload?.userID) {
-        throw new Error('INSERT ONE ERROR: userID is required for new records');
-      }
-
       const res = await this.db.insertOne(payload);
-      if (res.acknowledged) {
-        if (returnDocument) {
-          if (res?.insertedId) {
-            const insertedItem = await this.db.findOne<T>({
-              _id: new ObjectId(res.insertedId),
-            });
-            if (insertedItem) {
-              return insertedItem as R;
-            }
-          }
-        }
-        return null;
+      if (res.acknowledged && res.insertedId) {
+        const { insertedId } = res;
+        return { ...payload, _id: insertedId } as DatabaseDocument<T>;
       }
       return null;
     } catch (e: any) {
-      throw new Error(`INSERT ONE ERROR: ${e}`);
+      throw new Error(`${SERVICE_NAME} INSERT ONE ERROR: ${e}`);
     } finally {
       await this.close();
     }
@@ -106,7 +93,7 @@ class MongoDBConnector implements MongoDbConnectorI {
       }
     } catch (e: any) {
       await this.close();
-      throw new Error(`FIND BY ID ERROR: ${e.message}`);
+      throw new Error(`${SERVICE_NAME} FIND BY ID ERROR: ${e.message}`);
     } finally {
       await this.close();
     }
@@ -130,7 +117,7 @@ class MongoDBConnector implements MongoDbConnectorI {
       const result = await this.db.find(query, opt).toArray();
       return result as R[];
     } catch (e: any) {
-      throw new Error(`FIND ERROR: ${e}`);
+      throw new Error(`${SERVICE_NAME} FIND ERROR: ${e}`);
     } finally {
       await this.close();
     }
@@ -160,7 +147,7 @@ class MongoDBConnector implements MongoDbConnectorI {
       }
     } catch (e: any) {
       if (e) {
-        throw new Error(`UPDATE ERROR: ${e.message}`);
+        throw new Error(`${SERVICE_NAME} UPDATE ERROR: ${e.message}`);
       }
     } finally {
       await this.close();

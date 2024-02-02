@@ -27,7 +27,7 @@ const catDB = new MongoDBConnector(config);
   console.log('Database is Connected: ', connectedCheck);
 
   // Insert one returns the document with _id or NULL if no response
-  const cat1 = await catDB.insertOne(kitten1);
+  const cat1 = await catDB.insertOne<typeof kitten1>(kitten1);
   if (!cat1) {
     throw new Error('Error inserting document');
   }

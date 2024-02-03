@@ -12,6 +12,8 @@ export type NewItemPayload = Document;
 
 export type DatabaseDocument<T> = WithId<T>;
 
+export type ID = ObjectId | string;
+
 export interface MongoDbConfigI {
   connectionString: string;
   databaseName: string;
@@ -29,7 +31,7 @@ export interface MongoDbConnectorI {
     payload: NewItemPayload
   ) => Promise<DatabaseDocument<T> | null>;
 
-  findByID: <T>(id: ObjectId) => Promise<DatabaseDocument<T> | null>;
+  findByID: <T>(id: ID) => Promise<DatabaseDocument<T> | null>;
 
   find: <T>(
     query: Filter<Document>,
@@ -37,7 +39,7 @@ export interface MongoDbConnectorI {
   ) => Promise<DatabaseDocument<T>[] | []>;
 
   updateOne: <T>(
-    id: ObjectId,
+    id: ID,
     payload: Document
   ) => Promise<DatabaseDocument<T> | null>;
 

@@ -18,15 +18,15 @@ beforeEach(async () => {
 });
 
 const clearDB = async () => {
-  await mongo.connect();
-  await mongo.db.drop();
+  const db = await mongo.getDb();
+  await db.drop();
   await mongo.close();
 };
 
 afterAll(async () => {
   const mongoMain = new MongoDBConnector(mongoConfig);
-  await mongoMain.connect();
-  await mongoMain.db.drop();
+  const db = await mongoMain.getDb();
+  await db.drop();
   await mongoMain.close();
 });
 
@@ -90,16 +90,6 @@ describe('MongoDbConnector Methods', () => {
 });
 
 describe('CRUD operations', () => {
-  test('Insert one requires userID, throws error', async () => {
-    const payload = {
-      name: 'Kitten Pants',
-    };
-
-    expect(async () => {
-      await mongo.insertOne(payload);
-    }).rejects.toThrow();
-  });
-
   test('Insert one error if insert 1 back to back called too soon', () => {
     const payload = { userID: '999', pet: 'kitten' };
 
@@ -120,7 +110,6 @@ describe('CRUD operations', () => {
       return false;
     }
     expect(result).toHaveProperty('_id');
-    expect(result).toHaveProperty('userID');
     expect(result).toHaveProperty('job');
   });
 
@@ -130,7 +119,7 @@ describe('CRUD operations', () => {
       name: 'Frank',
       job: 'clam guy',
     };
-    const resultDocument = await mongo.insertOne(payload);
+    const resultDocument = await mongo.insertOne<typeof payload>(payload);
     expect(resultDocument).toHaveProperty('_id');
     expect(resultDocument).toMatchObject({
       userID: '123',

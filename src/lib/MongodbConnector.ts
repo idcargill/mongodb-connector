@@ -13,13 +13,14 @@ import type {
   MongoDbConfigI,
   MongoDbConnectorI,
   DatabaseDocument,
+  ID,
 } from './types';
 
 const SERVICE_NAME = '[MongoDB Connector]';
 
 class MongoDBConnector implements MongoDbConnectorI {
-  public databaseName: string;
-  public db: Collection<Document>;
+  private databaseName: string;
+  private db: Collection<Document>;
   private connectionString: string;
   private collectionName: string;
   private client: MongoClient;
@@ -56,6 +57,11 @@ class MongoDBConnector implements MongoDbConnectorI {
 
   public getCollectionName = () => this.collectionName;
 
+  public getDb = async () => {
+    await this.connect();
+    return this.db;
+  };
+
   /**
    *
    * @param payload is a Document Object
@@ -81,13 +87,17 @@ class MongoDBConnector implements MongoDbConnectorI {
 
   // /**
   //  * Find by MongoID
-  //  * @param  mongoDB _id
+  //  * @param  mongoDB _id as ObjectId or string
   //  * @returns Document Generic | null
   //  */
-  public async findByID<T, R = DatabaseDocument<T>>(id: ObjectId) {
+  public async findByID<T, R = DatabaseDocument<T>>(
+    mongoId: ObjectId | string
+  ) {
+    const id = this.getMongoId(mongoId);
+
     try {
       await this.connect();
-      const response = await this.db.findOne({ _id: new ObjectId(id) });
+      const response = await this.db.findOne({ _id: id });
       if (response?._id) {
         return response as R;
       }
@@ -131,7 +141,7 @@ class MongoDBConnector implements MongoDbConnectorI {
    * @returns Updated Document Generic | null
    */
   public async updateOne<T, U = DatabaseDocument<T>>(
-    id: ObjectId,
+    id: ID,
     payload: Document
   ): Promise<U | null> {
     let response: Document;
@@ -184,6 +194,16 @@ class MongoDBConnector implements MongoDbConnectorI {
       await this.client.close();
     }
     return false;
+  }
+
+  private getMongoId(mongoId: ID): ObjectId {
+    let id: ObjectId;
+    if (typeof mongoId === 'string') {
+      id = new ObjectId(mongoId);
+    } else {
+      id = mongoId;
+    }
+    return id;
   }
 }
 

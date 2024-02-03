@@ -64,8 +64,8 @@ const catDB = new MongoDBConnector(config);
   console.log('Delete not found: ', check);
 
   // Access Mongodb Driver directly for custom queries
-  await catDB.connect();
-  await catDB.db.deleteMany({ name: 'Kitten 1' });
-  await catDB.db.deleteMany({ name: 'Kitten 2' });
+  const db = await catDB.getDb();
+  await db.deleteMany({ name: 'Kitten 1' });
+  await db.deleteMany({ name: 'Kitten 2' });
   await catDB.close();
 })();

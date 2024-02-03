@@ -18,15 +18,15 @@ beforeEach(async () => {
 });
 
 const clearDB = async () => {
-  await mongo.connect();
-  await mongo.db.drop();
+  const db = await mongo.getDb();
+  await db.drop();
   await mongo.close();
 };
 
 afterAll(async () => {
   const mongoMain = new MongoDBConnector(mongoConfig);
-  await mongoMain.connect();
-  await mongoMain.db.drop();
+  const db = await mongoMain.getDb();
+  await db.drop();
   await mongoMain.close();
 });
 
@@ -90,17 +90,6 @@ describe('MongoDbConnector Methods', () => {
 });
 
 describe('CRUD operations', () => {
-  test('Insert one requires userID, throws error', async () => {
-    const payload = {
-      name: 'Kitten Pants',
-    };
-
-    expect(async () => {
-      // @ts-expect-error testing
-      await mongo.insertOne(payload);
-    }).rejects.toThrow();
-  });
-
   test('Insert one error if insert 1 back to back called too soon', () => {
     const payload = { userID: '999', pet: 'kitten' };
 
@@ -121,7 +110,6 @@ describe('CRUD operations', () => {
       return false;
     }
     expect(result).toHaveProperty('_id');
-    expect(result).toHaveProperty('userID');
     expect(result).toHaveProperty('job');
   });
 
@@ -131,7 +119,7 @@ describe('CRUD operations', () => {
       name: 'Frank',
       job: 'clam guy',
     };
-    const resultDocument = await mongo.insertOne(payload, true);
+    const resultDocument = await mongo.insertOne<typeof payload>(payload);
     expect(resultDocument).toHaveProperty('_id');
     expect(resultDocument).toMatchObject({
       userID: '123',
@@ -194,8 +182,8 @@ describe('CRUD operations', () => {
       },
     };
 
-    await mongo.insertOne(newPayload1, false);
-    await mongo.insertOne(newPayload2, false);
+    await mongo.insertOne(newPayload1);
+    await mongo.insertOne(newPayload2);
     const record = await mongo.find<typeof newPayload1>(findQuery, options);
     if (record.length < 1) {
       return false;
@@ -268,7 +256,7 @@ describe('CRUD operations', () => {
       pet: 'shark',
       car: 'lemon',
     };
-    const result = await mongo.insertOne(person, true);
+    const result = await mongo.insertOne(person);
     expect(result).toMatchObject(person);
     const res = await mongo.updateOne(
       new ObjectId('64111111111111111111e50a'),

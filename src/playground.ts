@@ -27,7 +27,7 @@ const catDB = new MongoDBConnector(config);
   console.log('Database is Connected: ', connectedCheck);
 
   // Insert one returns the document with _id or NULL if no response
-  const cat1 = await catDB.insertOne(kitten1);
+  const cat1 = await catDB.insertOne<typeof kitten1>(kitten1);
   if (!cat1) {
     throw new Error('Error inserting document');
   }
@@ -64,8 +64,8 @@ const catDB = new MongoDBConnector(config);
   console.log('Delete not found: ', check);
 
   // Access Mongodb Driver directly for custom queries
-  await catDB.connect();
-  await catDB.db.deleteMany({ name: 'Kitten 1' });
-  await catDB.db.deleteMany({ name: 'Kitten 2' });
+  const db = await catDB.getDb();
+  await db.deleteMany({ name: 'Kitten 1' });
+  await db.deleteMany({ name: 'Kitten 2' });
   await catDB.close();
 })();

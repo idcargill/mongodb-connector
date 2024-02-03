@@ -2,79 +2,65 @@
 
 [NPM](https://www.npmjs.com/package/@idcargill/mongodb-connector)
 
-A simple MongoDB wrapper for CRUD operations.
+A simple MongoDB wrapper for CRUD operations in typescript.
 
-Methods are wrapped async to simplify repeated connections. Each instance connects to a single collection.
+Methods are wrapped async to simplify basic crud connections. Each manages a single collection.
 
-Methods can accept types as generics.
-All documents returned will:
+Methods can accept type generics for return values with added MongoId.
 
-- \_id: ObjectId
-- userID: string
+Can also return the mongodb collection to run methods on for more complicated operations.
 
-## Config
+## Usage
 
-A minimal config object is used to create a MongoDbConnector instance.
+Build an object implementing the MongoDbConfigI interface.
 
-```javascript
+```typescript
 import MongoDBConnector, { MongoDbConfigI } from 'mongodb-connector';
 
 const config: MongoDbConfigI = {
   databaseName: 'MyDataBase',
-  collectionName: 'spoon',
+  collectionName: 'spoons',
   connectionString: 'mongodb://localhost:27017/?serverSelectionTimeoutMS=2000',
 };
 
-const mongo = new MongoDbConnector(config);
+// Create mongo connector instance
+const spoons = new MongoDbConnector(config);
+
+type GrapefruitSpoon = { sharpEdges: true };
+
+const gfSpoon = await spoons.insertOne<GrapefruitSpoon>(payloadObj);
+// gfSpoon has _id and sharp edges
 ```
 
-## DatabaseDocuments
-
-New documents are modified to have a userID and \_id property to match the DocumentDatabase interface. A userID is required for all new documents. If not needed, this could be a system ID or the same across all documents in a collection.
-
-THe DatabaseDocument modifies the original type by appending a Mongo generated [_id], and a user supplied [userID]
-
-## Methods
+## CURD Methods
 
 - isMongoConnected() => boolean
 
-- insertOne<MyDocument>(payload) => DatabaseDocument | null
+- insertOne<returnType>(payload) => DatabaseDocument | null
 
-- insertOne<MyDocument>(payload, true) => DatabaseDocument | null
+- findById<returnType>(ObjectId | string) => DatabaseDocument | null
 
-- findById<DatabaseDocument>(ObjectID) => DatabaseDocument | null
+- find<returnType>(query, FindOptions) => DatabaseDocument[] | []
 
-- find<MyDocument>(query, FindOptions) => DatabaseDocument[] | []
+- updateOne<returnType>(ObjectId | string, payload) => DatabaseDocument | null
 
-- updateOne<DatabaseDocument>(mongoID, payload) => DatabaseDocument | null
+- deleteOneItem(objectId | string) => DeleteResult
 
-- deleteOneItem(objectId) => DeleteResult
+## Mongo Collection for direct control
 
-### Example Usage
+```typescript
+const db = mongo.getDb();
 
-See src/playground.ts for examples
+await db.connect();
 
-```javascript
-const newItem: NewItemPayload = {
-  userID: 'Required',
-  anything: 'anything',
-};
+await db.insertOne({});
 
-// Return new document with _id
-const doc1 = (await mongo.insertOne) < T > newItem;
-// doc1 is a DatabaseDocument<T> with userID and _id
-
-// Access Mongodb directly
-const catDB = new MongoDBConnector(config);
-await catDB.connect();
-await catDB.db.deleteMany({ name: 'Kitten 1' });
-await catDB.db.deleteMany({ name: 'Kitten 2' });
-await catDB.close();
+await db.close();
 ```
 
 ### Development
 
-To start up docker container:
+Start mongodb in docker:
 
 > yarn start:db
 
@@ -98,7 +84,7 @@ Run all tests w/ coverage:
 
 Run single file tests:
 
-> yarn test-file "file_name"
+> yarn test-file <file_name>
 
 ### Stop Docker
 
@@ -106,4 +92,12 @@ Run single file tests:
 
 ### Deploy changes to NPM
 
+- merge in changes to main branch
+- update local main
+
 > yarn pack
+
+> yarn publish
+
+- enter new version number
+- enter authentication

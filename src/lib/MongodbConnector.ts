@@ -90,14 +90,12 @@ class MongoDBConnector implements MongoDbConnectorI {
   //  * @param  mongoDB _id as ObjectId or string
   //  * @returns Document Generic | null
   //  */
-  public async findByID<T, R = DatabaseDocument<T>>(
-    mongoId: ObjectId | string
-  ) {
-    const id = this.getMongoId(mongoId);
+  public async findByID<T, R = DatabaseDocument<T>>(id: ID) {
+    const mongoID = this.getMongoId(id);
 
     try {
       await this.connect();
-      const response = await this.db.findOne({ _id: id });
+      const response = await this.db.findOne({ _id: mongoID });
       if (response?._id) {
         return response as R;
       }
@@ -145,10 +143,12 @@ class MongoDBConnector implements MongoDbConnectorI {
     payload: Document
   ): Promise<U | null> {
     let response: Document;
+    const mongoID = this.getMongoId(id);
+
     try {
       await this.connect();
       response = await this.db.findOneAndUpdate(
-        { _id: new ObjectId(id) },
+        { _id: mongoID },
         { $set: payload },
         { returnDocument: 'after' }
       );
@@ -170,10 +170,12 @@ class MongoDBConnector implements MongoDbConnectorI {
   //  * @param id ObjectId
   //  * @returns Delete result { ok: 1 }
   //  */
-  public async deleteOneItem(id: ObjectId): Promise<DeleteResult> {
+  public async deleteOneItem(id: ID): Promise<DeleteResult> {
+    const mongoID = this.getMongoId(id);
+
     try {
       await this.connect();
-      const res = await this.db.deleteOne({ _id: new ObjectId(id) });
+      const res = await this.db.deleteOne({ _id: mongoID });
       return res;
     } finally {
       await this.close();
@@ -196,6 +198,11 @@ class MongoDBConnector implements MongoDbConnectorI {
     return false;
   }
 
+  /**
+   * Guarantees ObjectId for mongoDb _id
+   * @param mongoId as ObjectId or String
+   * @returns ObjectId
+   */
   private getMongoId(mongoId: ID): ObjectId {
     let id: ObjectId;
     if (typeof mongoId === 'string') {

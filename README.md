@@ -95,7 +95,14 @@ Run single file tests:
 - merge in changes to main branch
 - update local main
 
+- Build the typescript bundle with the latest changes
+  > yarn build
+
+-- Bundle the NPM package
+
 > yarn pack
+
+- Publish to NPM
 
 > yarn publish
 

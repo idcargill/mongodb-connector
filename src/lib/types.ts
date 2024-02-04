@@ -43,5 +43,5 @@ export interface MongoDbConnectorI {
     payload: Document
   ) => Promise<DatabaseDocument<T> | null>;
 
-  deleteOneItem: (id: ObjectId) => Promise<DeleteResult>;
+  deleteOneItem: (id: ID) => Promise<DeleteResult>;
 }
